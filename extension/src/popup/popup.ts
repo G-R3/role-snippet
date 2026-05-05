@@ -2,8 +2,11 @@ import type { JobPost, JobPostField } from "../shared/job";
 import { hasMinimumJobPostFields } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
+  SYNC_JOB_POST_MESSAGE,
   type ExtractJobPostResponse,
-  type ExtractJobPostRequest
+  type ExtractJobPostRequest,
+  type SyncJobPostRequest,
+  type SyncJobPostResponse
 } from "../shared/messages";
 import {
   formatJobPostAsJson,
@@ -15,6 +18,7 @@ let currentJobPost: JobPost | null = null;
 const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
 const extractButton = getElement<HTMLButtonElement>("extract-button");
+const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const copyTitleButton = getElement<HTMLButtonElement>("copy-title-button");
 const copyCompanyButton = getElement<HTMLButtonElement>("copy-company-button");
 const copyDescriptionButton = getElement<HTMLButtonElement>("copy-description-button");
@@ -52,6 +56,7 @@ function setLoading(isLoading: boolean): void {
 }
 
 function setCopyButtonsEnabled(isEnabled: boolean): void {
+  addToNotionButton.disabled = !isEnabled;
   copyTitleButton.disabled = !isEnabled;
   copyCompanyButton.disabled = !isEnabled;
   copyDescriptionButton.disabled = !isEnabled;
@@ -62,13 +67,20 @@ function setCopyButtonsEnabled(isEnabled: boolean): void {
   copyJsonButton.disabled = !isEnabled;
 }
 
+function setNotionSyncLoading(isLoading: boolean): void {
+  addToNotionButton.disabled = isLoading || !currentJobPost;
+  addToNotionButton.textContent = isLoading ? "Adding to Notion..." : "Add to Notion";
+}
+
 function renderJobPost(jobPost: JobPost): void {
   currentJobPost = jobPost;
   previewElement.classList.remove("hidden");
 
   titleElement.textContent = jobPost.title || "Not found";
+  titleElement.title = jobPost.title || "";
   companyElement.textContent = jobPost.company || "Not found";
   urlElement.textContent = jobPost.sourceUrl;
+  urlElement.title = jobPost.sourceUrl;
   descriptionElement.value = jobPost.description || "Not found";
 
   setCopyButtonsEnabled(true);
@@ -152,6 +164,34 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
   });
 }
 
+function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
+  const request: SyncJobPostRequest = {
+    type: SYNC_JOB_POST_MESSAGE,
+    jobPost
+  };
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(request, (response: SyncJobPostResponse | undefined) => {
+      const lastError = chrome.runtime.lastError;
+
+      if (lastError) {
+        resolve({
+          ok: false,
+          error: "Could not reach the extension background worker."
+        });
+        return;
+      }
+
+      resolve(
+        response ?? {
+          ok: false,
+          error: "The Notion sync did not return a response."
+        }
+      );
+    });
+  });
+}
+
 async function extractFromActiveTab(): Promise<void> {
   setLoading(true);
   setStatus("Looking for job details...");
@@ -193,6 +233,29 @@ async function copyCurrentJobPost(formatter: (jobPost: JobPost) => string, label
   setStatus(`${label} copied to clipboard.`, "success");
 }
 
+async function addCurrentJobPostToNotion(): Promise<void> {
+  if (!currentJobPost) {
+    setStatus("Extract a job post before adding it to Notion.", "error");
+    return;
+  }
+
+  setNotionSyncLoading(true);
+  setStatus("Adding job to Notion...");
+
+  try {
+    const response = await sendSyncMessage(currentJobPost);
+
+    if (!response.ok) {
+      setStatus(response.error, "error");
+      return;
+    }
+
+    setStatus("Added job to Notion.", "success");
+  } finally {
+    setNotionSyncLoading(false);
+  }
+}
+
 async function copyCurrentJobPostField(field: JobPostField, label: string): Promise<void> {
   if (!currentJobPost) {
     setStatus("Extract a job post before copying.", "error");
@@ -214,6 +277,10 @@ void restoreSavedJobPost();
 
 extractButton.addEventListener("click", () => {
   void extractFromActiveTab();
+});
+
+addToNotionButton.addEventListener("click", () => {
+  void addCurrentJobPostToNotion();
 });
 
 copyTitleButton.addEventListener("click", () => {

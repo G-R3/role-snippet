@@ -13,9 +13,13 @@ export const emptyJobPost: JobPost = {
   title: "",
   company: "",
   description: "",
-  extractedAt: ""
+  extractedAt: "",
 };
 
 export function hasMinimumJobPostFields(jobPost: JobPost): boolean {
-  return Boolean(jobPost.title.trim() && jobPost.company.trim() && jobPost.description.trim());
+  return Boolean(
+    jobPost.title.trim() &&
+    jobPost.company.trim() &&
+    jobPost.description.trim(),
+  );
 }

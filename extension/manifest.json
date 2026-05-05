@@ -22,7 +22,9 @@
   ],
   "host_permissions": [
     "https://www.linkedin.com/jobs/*",
-    "https://linkedin.com/jobs/*"
+    "https://linkedin.com/jobs/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*"
   ],
   "permissions": ["activeTab", "storage", "tabs"]
 }

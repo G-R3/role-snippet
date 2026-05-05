@@ -8,7 +8,7 @@ export function formatJobPostAsPlainText(jobPost: JobPost): string {
     `Extracted: ${jobPost.extractedAt}`,
     "",
     "Description:",
-    jobPost.description
+    jobPost.description,
   ].join("\n");
 }
 
@@ -22,7 +22,7 @@ export function formatJobPostAsMarkdown(jobPost: JobPost): string {
     "",
     "## Job Description",
     "",
-    jobPost.description
+    jobPost.description,
   ].join("\n");
 }
 

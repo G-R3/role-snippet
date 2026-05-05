@@ -6,22 +6,42 @@ Chrome extension for extracting LinkedIn job post details and preparing them for
 
 - Extracts the title, company, description, source URL, and extraction timestamp from the active LinkedIn job page.
 - Shows a preview in the extension popup.
-- Copies the extracted job as plain text, Markdown, or JSON for manual Notion entry.
-- Keeps a typed sync boundary ready for a future Notion API backend.
+- Copies individual fields or the full job as plain text, Markdown, or JSON.
+- Adds the extracted job to a Notion database through a Vercel backend.
 
-## What v1 Does Not Do
+## Notion Database Mapping
 
-This version does not write to Notion automatically. Automatic Notion row creation should be added through a small backend or serverless function that stores the Notion API token outside the Chrome extension.
+The backend maps extracted jobs into these Notion database properties:
+
+- `Role`: LinkedIn job title.
+- `Company`: company name.
+- `Status`: `Applied`.
+- `Job URL`: LinkedIn URL.
+- `Description`: job description.
+- `Applied`: current date.
 
 ## Development
 
-Install dependencies:
+Install extension dependencies:
 
 ```sh
 bun install
 ```
 
-Run verification:
+Install backend dependencies:
+
+```sh
+cd backend
+bun install
+```
+
+Run all verification:
+
+```sh
+bun run verify:all
+```
+
+Run extension verification only:
 
 ```sh
 bun run verify
@@ -35,6 +55,42 @@ bun run build
 
 The loadable extension is emitted to `dist/`.
 
+## Backend Setup
+
+1. Create a Notion internal integration and copy its token.
+2. Share your Notion jobs database with that integration.
+3. Copy `backend/.env.example` to `backend/.env.local`.
+4. Set:
+
+```sh
+NOTION_TOKEN=secret_your_notion_integration_token
+NOTION_DATABASE_ID=your_notion_database_id
+ALLOWED_EXTENSION_ORIGIN=*
+```
+
+For production, deploy `backend/` to Vercel and add the same environment variables in the Vercel project settings.
+
+## Extension Backend URL
+
+The extension calls the URL in `extension/src/shared/config.ts`.
+
+By default it is:
+
+```ts
+export const NOTION_BACKEND_JOBS_URL = "http://localhost:3000/api/jobs";
+```
+
+After deploying the backend, replace it with your Vercel URL:
+
+```ts
+export const NOTION_BACKEND_JOBS_URL = "https://your-project.vercel.app/api/jobs";
+```
+
+The manifest already allows local development and Vercel preview/production URLs:
+
+- `http://localhost:3000/*`
+- `https://*.vercel.app/*`
+
 ## Load In Chrome
 
 1. Open `chrome://extensions`.
@@ -43,8 +99,9 @@ The loadable extension is emitted to `dist/`.
 4. Select the `dist/` directory.
 5. Open a LinkedIn job page.
 6. Click the LinkSnaggedIn extension icon and choose Extract job post.
+7. Click Add to Notion to create a row in your configured database.
 
-## Future Notion Sync
+## Job Payload
 
 The extension already uses the shared `JobPost` payload:
 
@@ -57,5 +114,3 @@ type JobPost = {
   extractedAt: string;
 };
 ```
-
-A future backend can accept this payload, map it to Notion database properties, and create rows with server-side `NOTION_TOKEN` and `NOTION_DATABASE_ID` values.

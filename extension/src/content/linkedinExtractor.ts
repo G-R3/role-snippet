@@ -2,7 +2,7 @@ import type { JobPost } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
   type ExtractJobPostResponse,
-  type ExtensionRequest
+  type ExtensionRequest,
 } from "../shared/messages";
 
 const LINKEDIN_JOB_PATH_PATTERN = /^\/jobs\//;
@@ -12,7 +12,7 @@ const TITLE_SELECTORS = [
   ".jobs-unified-top-card__job-title",
   ".top-card-layout__title",
   "[data-test-job-title]",
-  "h1"
+  "h1",
 ];
 
 const COMPANY_SELECTORS = [
@@ -22,7 +22,7 @@ const COMPANY_SELECTORS = [
   ".jobs-unified-top-card__company-name",
   ".topcard__org-name-link",
   ".topcard__flavor--black-link",
-  "[data-test-job-company-name]"
+  "[data-test-job-company-name]",
 ];
 
 const DESCRIPTION_SELECTORS = [
@@ -30,15 +30,21 @@ const DESCRIPTION_SELECTORS = [
   ".jobs-description__content",
   ".jobs-box__html-content",
   ".description__text",
-  "[data-test-job-description]"
+  "[data-test-job-description]",
 ];
 
 function isLinkedInJobPage(): boolean {
-  return window.location.hostname.endsWith("linkedin.com") && LINKEDIN_JOB_PATH_PATTERN.test(window.location.pathname);
+  return (
+    window.location.hostname.endsWith("linkedin.com") &&
+    LINKEDIN_JOB_PATH_PATTERN.test(window.location.pathname)
+  );
 }
 
 function normalizeInlineText(value: string): string {
-  return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalizeMultilineText(value: string): string {
@@ -49,7 +55,10 @@ function normalizeMultilineText(value: string): string {
     .map((line) => line.replace(/[ \t]+/g, " ").trim())
     .filter((line) => line && !/^show (more|less)$/i.test(line));
 
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function queryHTMLElement(selector: string): HTMLElement | null {
@@ -60,7 +69,9 @@ function queryHTMLElement(selector: string): HTMLElement | null {
 function getFirstText(selectors: string[]): string {
   for (const selector of selectors) {
     const element = queryHTMLElement(selector);
-    const text = element ? normalizeInlineText(element.innerText || element.textContent || "") : "";
+    const text = element
+      ? normalizeInlineText(element.innerText || element.textContent || "")
+      : "";
 
     if (text) {
       return text;
@@ -73,7 +84,9 @@ function getFirstText(selectors: string[]): string {
 function getDescriptionText(): string {
   for (const selector of DESCRIPTION_SELECTORS) {
     const element = queryHTMLElement(selector);
-    const text = element ? normalizeMultilineText(element.innerText || element.textContent || "") : "";
+    const text = element
+      ? normalizeMultilineText(element.innerText || element.textContent || "")
+      : "";
 
     if (text) {
       return text;
@@ -87,7 +100,7 @@ function extractLinkedInJobPost(): ExtractJobPostResponse {
   if (!isLinkedInJobPage()) {
     return {
       ok: false,
-      error: "Open a LinkedIn job post page before extracting."
+      error: "Open a LinkedIn job post page before extracting.",
     };
   }
 
@@ -96,29 +109,33 @@ function extractLinkedInJobPost(): ExtractJobPostResponse {
     title: getFirstText(TITLE_SELECTORS),
     company: getFirstText(COMPANY_SELECTORS),
     description: getDescriptionText(),
-    extractedAt: new Date().toISOString()
+    extractedAt: new Date().toISOString(),
   };
 
   if (!jobPost.title && !jobPost.company && !jobPost.description) {
     return {
       ok: false,
-      error: "Could not find job details on this LinkedIn page."
+      error: "Could not find job details on this LinkedIn page.",
     };
   }
 
   return {
     ok: true,
-    jobPost
+    jobPost,
   };
 }
 
 chrome.runtime.onMessage.addListener(
-  (request: ExtensionRequest, _sender: chrome.runtime.MessageSender, sendResponse: (response: ExtractJobPostResponse) => void) => {
+  (
+    request: ExtensionRequest,
+    _sender: chrome.runtime.MessageSender,
+    sendResponse: (response: ExtractJobPostResponse) => void,
+  ) => {
     if (request.type !== EXTRACT_JOB_POST_MESSAGE) {
       return false;
     }
 
     sendResponse(extractLinkedInJobPost());
     return false;
-  }
+  },
 );

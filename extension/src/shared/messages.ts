@@ -25,6 +25,10 @@ export type SyncJobPostRequest = {
 export type SyncJobPostResponse =
   | {
       ok: true;
+      notionPage?: {
+        id: string;
+        url: string;
+      };
     }
   | {
       ok: false;

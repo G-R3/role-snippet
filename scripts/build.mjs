@@ -29,5 +29,6 @@ await esbuild.build({
 await cp(resolve(extensionDir, "manifest.json"), resolve(distDir, "manifest.json"));
 await cp(resolve(extensionDir, "src/popup/popup.html"), resolve(distDir, "popup/popup.html"));
 await cp(resolve(extensionDir, "src/popup/popup.css"), resolve(distDir, "popup/popup.css"));
+await cp(resolve(extensionDir, "src/popup/fonts"), resolve(distDir, "popup/fonts"), { recursive: true });
 
 console.log(`Built extension to ${distDir}`);
