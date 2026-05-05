@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/jobs.ts": {
+      "runtime": "@vercel/node@5.7.15"
+    }
+  }
+}
