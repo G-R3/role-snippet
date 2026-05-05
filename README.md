@@ -70,6 +70,13 @@ ALLOWED_EXTENSION_ORIGIN=*
 
 For production, deploy `backend/` to Vercel and add the same environment variables in the Vercel project settings.
 
+The Vercel route in `backend/api/jobs.ts` is intentionally thin. The reusable Notion logic lives in:
+
+- `backend/src/jobPost.ts`: shared `JobPost` validation.
+- `backend/src/notionJobs.ts`: Notion database mapping and row creation.
+
+That split keeps a future Cloudflare Workers migration smaller: a Worker would replace only the HTTP wrapper while reusing the Notion mapping module.
+
 ## Extension Backend URL
 
 The extension calls the URL in `extension/src/shared/config.ts`.
@@ -83,7 +90,8 @@ export const NOTION_BACKEND_JOBS_URL = "http://localhost:3000/api/jobs";
 After deploying the backend, replace it with your Vercel URL:
 
 ```ts
-export const NOTION_BACKEND_JOBS_URL = "https://your-project.vercel.app/api/jobs";
+export const NOTION_BACKEND_JOBS_URL =
+  "https://your-project.vercel.app/api/jobs";
 ```
 
 The manifest already allows local development and Vercel preview/production URLs:
