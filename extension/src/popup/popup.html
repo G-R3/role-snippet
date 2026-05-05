@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LinkSnaggedIn</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="header">
+        <div>
+          <p class="eyebrow">LinkedIn to Notion</p>
+          <h1>LinkSnaggedIn</h1>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Extraction controls">
+        <button id="extract-button" class="primary-button" type="button">Extract job post</button>
+        <p id="status" class="status" role="status">Open a LinkedIn job post, then extract.</p>
+      </section>
+
+      <section id="preview" class="preview hidden" aria-label="Extracted job preview">
+        <dl>
+          <div>
+            <dt>Title</dt>
+            <dd id="title-value"></dd>
+          </div>
+          <div>
+            <dt>Company</dt>
+            <dd id="company-value"></dd>
+          </div>
+          <div>
+            <dt>URL</dt>
+            <dd id="url-value"></dd>
+          </div>
+        </dl>
+
+        <label for="description-value">Description</label>
+        <textarea id="description-value" readonly></textarea>
+      </section>
+
+      <section class="copy-group" aria-label="Copy individual fields">
+        <h2>Copy fields</h2>
+        <div class="copy-actions field-actions">
+          <button id="copy-title-button" type="button" disabled>Title</button>
+          <button id="copy-company-button" type="button" disabled>Company</button>
+          <button id="copy-description-button" type="button" disabled>Description</button>
+          <button id="copy-url-button" type="button" disabled>URL</button>
+          <button id="copy-extracted-at-button" type="button" disabled>Extracted date</button>
+        </div>
+      </section>
+
+      <section class="copy-group" aria-label="Copy full export formats">
+        <h2>Copy full export</h2>
+        <div class="copy-actions">
+          <button id="copy-text-button" type="button" disabled>Text</button>
+          <button id="copy-markdown-button" type="button" disabled>Markdown</button>
+          <button id="copy-json-button" type="button" disabled>JSON</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="./popup.js"></script>
+  </body>
+</html>
