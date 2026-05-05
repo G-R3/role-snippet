@@ -27,7 +27,10 @@ async function syncJobPost(jobPost: JobPost): Promise<SyncJobPostResponse> {
     const payload = (await response.json().catch(() => null)) as unknown;
 
     if (!response.ok) {
-      const error = isSyncJobPostResponse(payload) && !payload.ok ? payload.error : "Failed to add job to Notion.";
+      const error =
+        isSyncJobPostResponse(payload) && !payload.ok
+          ? payload.error
+          : "Failed to add job to Notion.";
 
       return {
         ok: false,
@@ -45,7 +48,10 @@ async function syncJobPost(jobPost: JobPost): Promise<SyncJobPostResponse> {
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Could not reach the Notion backend.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Could not reach the Notion backend.",
     };
   }
 }
