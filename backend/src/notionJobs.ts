@@ -131,7 +131,29 @@ export async function createNotionJobPage(jobPost: JobPost, config: NotionJobCon
           start: getTodayDate()
         }
       }
-    }
+    },
+    children: [
+      {
+        object: "block",
+        type: "heading_2",
+        heading_2: {
+          rich_text: [
+            {
+              text: {
+                content: "Job Description"
+              }
+            }
+          ]
+        }
+      },
+      {
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: textChunks(jobPost.description)
+        }
+      }
+    ]
   });
 
   return {
