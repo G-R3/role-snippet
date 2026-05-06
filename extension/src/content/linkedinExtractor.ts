@@ -1,8 +1,8 @@
 import type { JobPost } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
-  type ExtractJobPostResponse,
   type ExtensionRequest,
+  type ExtractJobPostResponse,
 } from "../shared/messages";
 
 const LINKEDIN_JOB_PATH_PATTERN = /^\/jobs\//;
@@ -218,7 +218,9 @@ function getCompanyFromJobSummary(jobId: string): string {
 function getDescriptionText(): string {
   for (const selector of DESCRIPTION_SELECTORS) {
     const element = queryHTMLElement(selector);
-    const text = element ? cleanDescriptionText(getElementMultilineText(element)) : "";
+    const text = element
+      ? cleanDescriptionText(getElementMultilineText(element))
+      : "";
 
     if (text) {
       return text;
@@ -246,7 +248,8 @@ function getDescriptionFromAboutSection(jobId: string): string {
   }
 
   const aboutHeading = queryHTMLElements("h2").find(
-    (heading) => getElementInlineText(heading).toLowerCase() === "about the job",
+    (heading) =>
+      getElementInlineText(heading).toLowerCase() === "about the job",
   );
 
   let current = aboutHeading?.parentElement ?? null;

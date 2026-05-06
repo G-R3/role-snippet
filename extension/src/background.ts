@@ -1,8 +1,8 @@
-import type { JobPost } from "./shared/job";
 import { NOTION_BACKEND_JOBS_URL } from "./shared/config";
+import type { JobPost } from "./shared/job";
 import {
-  SYNC_JOB_POST_MESSAGE,
   type ExtensionRequest,
+  SYNC_JOB_POST_MESSAGE,
   type SyncJobPostResponse,
 } from "./shared/messages";
 

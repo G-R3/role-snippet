@@ -89,7 +89,9 @@ button {
   color: var(--text);
   background: transparent;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
   text-align: left;
   letter-spacing: 0.01em;
 }

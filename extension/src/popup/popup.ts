@@ -2,16 +2,16 @@ import type { JobPost, JobPostField } from "../shared/job";
 import { hasMinimumJobPostFields } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
-  SYNC_JOB_POST_MESSAGE,
-  type ExtractJobPostResponse,
   type ExtractJobPostRequest,
+  type ExtractJobPostResponse,
+  SYNC_JOB_POST_MESSAGE,
   type SyncJobPostRequest,
-  type SyncJobPostResponse
+  type SyncJobPostResponse,
 } from "../shared/messages";
 import {
   formatJobPostAsJson,
   formatJobPostAsMarkdown,
-  formatJobPostAsPlainText
+  formatJobPostAsPlainText,
 } from "../shared/notionExport";
 
 let currentJobPost: JobPost | null = null;
@@ -21,11 +21,17 @@ const extractButton = getElement<HTMLButtonElement>("extract-button");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const copyTitleButton = getElement<HTMLButtonElement>("copy-title-button");
 const copyCompanyButton = getElement<HTMLButtonElement>("copy-company-button");
-const copyDescriptionButton = getElement<HTMLButtonElement>("copy-description-button");
+const copyDescriptionButton = getElement<HTMLButtonElement>(
+  "copy-description-button",
+);
 const copyUrlButton = getElement<HTMLButtonElement>("copy-url-button");
-const copyExtractedAtButton = getElement<HTMLButtonElement>("copy-extracted-at-button");
+const copyExtractedAtButton = getElement<HTMLButtonElement>(
+  "copy-extracted-at-button",
+);
 const copyTextButton = getElement<HTMLButtonElement>("copy-text-button");
-const copyMarkdownButton = getElement<HTMLButtonElement>("copy-markdown-button");
+const copyMarkdownButton = getElement<HTMLButtonElement>(
+  "copy-markdown-button",
+);
 const copyJsonButton = getElement<HTMLButtonElement>("copy-json-button");
 const statusElement = getElement<HTMLParagraphElement>("status");
 const previewElement = getElement<HTMLElement>("preview");
@@ -44,7 +50,10 @@ function getElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function setStatus(message: string, tone: "neutral" | "success" | "error" = "neutral"): void {
+function setStatus(
+  message: string,
+  tone: "neutral" | "success" | "error" = "neutral",
+): void {
   statusElement.textContent = message;
   statusElement.classList.toggle("success", tone === "success");
   statusElement.classList.toggle("error", tone === "error");
@@ -69,7 +78,9 @@ function setCopyButtonsEnabled(isEnabled: boolean): void {
 
 function setNotionSyncLoading(isLoading: boolean): void {
   addToNotionButton.disabled = isLoading || !currentJobPost;
-  addToNotionButton.textContent = isLoading ? "Adding to Notion..." : "Add to Notion";
+  addToNotionButton.textContent = isLoading
+    ? "Adding to Notion..."
+    : "Add to Notion";
 }
 
 function renderJobPost(jobPost: JobPost): void {
@@ -103,7 +114,7 @@ function isJobPost(value: unknown): value is JobPost {
 
 async function saveJobPost(jobPost: JobPost): Promise<void> {
   await chrome.storage.local.set({
-    [STORED_JOB_POST_KEY]: jobPost
+    [STORED_JOB_POST_KEY]: jobPost,
   });
 }
 
@@ -126,7 +137,10 @@ function isLinkedInJobUrl(url: string | undefined): boolean {
 
   try {
     const parsedUrl = new URL(url);
-    return parsedUrl.hostname.endsWith("linkedin.com") && parsedUrl.pathname.startsWith("/jobs/");
+    return (
+      parsedUrl.hostname.endsWith("linkedin.com") &&
+      parsedUrl.pathname.startsWith("/jobs/")
+    );
   } catch {
     return false;
   }
@@ -139,56 +153,64 @@ async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
 
 function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
   const request: ExtractJobPostRequest = {
-    type: EXTRACT_JOB_POST_MESSAGE
+    type: EXTRACT_JOB_POST_MESSAGE,
   };
 
   return new Promise((resolve) => {
-    chrome.tabs.sendMessage(tabId, request, (response: ExtractJobPostResponse | undefined) => {
-      const lastError = chrome.runtime.lastError;
+    chrome.tabs.sendMessage(
+      tabId,
+      request,
+      (response: ExtractJobPostResponse | undefined) => {
+        const lastError = chrome.runtime.lastError;
 
-      if (lastError) {
-        resolve({
-          ok: false,
-          error: "Could not reach the LinkedIn page. Reload the tab and try again."
-        });
-        return;
-      }
-
-      resolve(
-        response ?? {
-          ok: false,
-          error: "LinkedIn did not return job details."
+        if (lastError) {
+          resolve({
+            ok: false,
+            error:
+              "Could not reach the LinkedIn page. Reload the tab and try again.",
+          });
+          return;
         }
-      );
-    });
+
+        resolve(
+          response ?? {
+            ok: false,
+            error: "LinkedIn did not return job details.",
+          },
+        );
+      },
+    );
   });
 }
 
 function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
   const request: SyncJobPostRequest = {
     type: SYNC_JOB_POST_MESSAGE,
-    jobPost
+    jobPost,
   };
 
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage(request, (response: SyncJobPostResponse | undefined) => {
-      const lastError = chrome.runtime.lastError;
+    chrome.runtime.sendMessage(
+      request,
+      (response: SyncJobPostResponse | undefined) => {
+        const lastError = chrome.runtime.lastError;
 
-      if (lastError) {
-        resolve({
-          ok: false,
-          error: "Could not reach the extension background worker."
-        });
-        return;
-      }
-
-      resolve(
-        response ?? {
-          ok: false,
-          error: "The Notion sync did not return a response."
+        if (lastError) {
+          resolve({
+            ok: false,
+            error: "Could not reach the extension background worker.",
+          });
+          return;
         }
-      );
-    });
+
+        resolve(
+          response ?? {
+            ok: false,
+            error: "The Notion sync did not return a response.",
+          },
+        );
+      },
+    );
   });
 }
 
@@ -217,13 +239,19 @@ async function extractFromActiveTab(): Promise<void> {
     const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
       ? "Job post extracted."
       : "Extracted partial job details. Review before copying.";
-    setStatus(confidenceMessage, hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral");
+    setStatus(
+      confidenceMessage,
+      hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral",
+    );
   } finally {
     setLoading(false);
   }
 }
 
-async function copyCurrentJobPost(formatter: (jobPost: JobPost) => string, label: string): Promise<void> {
+async function copyCurrentJobPost(
+  formatter: (jobPost: JobPost) => string,
+  label: string,
+): Promise<void> {
   if (!currentJobPost) {
     setStatus("Extract a job post before copying.", "error");
     return;
@@ -256,7 +284,10 @@ async function addCurrentJobPostToNotion(): Promise<void> {
   }
 }
 
-async function copyCurrentJobPostField(field: JobPostField, label: string): Promise<void> {
+async function copyCurrentJobPostField(
+  field: JobPostField,
+  label: string,
+): Promise<void> {
   if (!currentJobPost) {
     setStatus("Extract a job post before copying.", "error");
     return;

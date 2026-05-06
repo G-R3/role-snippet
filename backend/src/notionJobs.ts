@@ -44,11 +44,18 @@ function textChunks(value: string): Array<{ text: { content: string } }> {
 
   const chunks: Array<{ text: { content: string } }> = [];
 
-  for (let index = 0; index < normalizedValue.length; index += MAX_RICH_TEXT_CHUNK_LENGTH) {
+  for (
+    let index = 0;
+    index < normalizedValue.length;
+    index += MAX_RICH_TEXT_CHUNK_LENGTH
+  ) {
     chunks.push({
       text: {
-        content: normalizedValue.slice(index, index + MAX_RICH_TEXT_CHUNK_LENGTH)
-      }
+        content: normalizedValue.slice(
+          index,
+          index + MAX_RICH_TEXT_CHUNK_LENGTH,
+        ),
+      },
     });
   }
 
@@ -59,23 +66,27 @@ function lowercaseField(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function buildStatusProperty(statusPropertyType: string | undefined): NotionProperty {
+function buildStatusProperty(
+  statusPropertyType: string | undefined,
+): NotionProperty {
   if (statusPropertyType === "select") {
     return {
       select: {
-        name: STATUS_VALUE
-      }
+        name: STATUS_VALUE,
+      },
     };
   }
 
   return {
     status: {
-      name: STATUS_VALUE
-    }
+      name: STATUS_VALUE,
+    },
   };
 }
 
-function hasDatabaseProperties(value: unknown): value is NotionDatabaseWithProperties {
+function hasDatabaseProperties(
+  value: unknown,
+): value is NotionDatabaseWithProperties {
   return Boolean(value && typeof value === "object" && "properties" in value);
 }
 
@@ -88,9 +99,12 @@ function getPageUrl(value: unknown): string {
   return typeof page.url === "string" ? page.url : "";
 }
 
-async function getStatusPropertyType(notion: Client, databaseId: string): Promise<string | undefined> {
+async function getStatusPropertyType(
+  notion: Client,
+  databaseId: string,
+): Promise<string | undefined> {
   const database = await notion.databases.retrieve({
-    database_id: databaseId
+    database_id: databaseId,
   });
 
   if (!hasDatabaseProperties(database)) {
@@ -102,35 +116,41 @@ async function getStatusPropertyType(notion: Client, databaseId: string): Promis
   return statusProperty?.type;
 }
 
-export async function createNotionJobPage(jobPost: JobPost, config: NotionJobConfig): Promise<CreatedNotionJobPage> {
+export async function createNotionJobPage(
+  jobPost: JobPost,
+  config: NotionJobConfig,
+): Promise<CreatedNotionJobPage> {
   const notion = new Client({
-    auth: config.notionToken
+    auth: config.notionToken,
   });
-  const statusPropertyType = await getStatusPropertyType(notion, config.databaseId);
+  const statusPropertyType = await getStatusPropertyType(
+    notion,
+    config.databaseId,
+  );
 
   const page = await notion.pages.create({
     parent: {
-      database_id: config.databaseId
+      database_id: config.databaseId,
     },
     properties: {
       Role: {
-        title: textChunks(lowercaseField(jobPost.title))
+        title: textChunks(lowercaseField(jobPost.title)),
       },
       Company: {
-        rich_text: textChunks(lowercaseField(jobPost.company))
+        rich_text: textChunks(lowercaseField(jobPost.company)),
       },
       Status: buildStatusProperty(statusPropertyType),
       "Job URL": {
-        url: jobPost.sourceUrl
+        url: jobPost.sourceUrl,
       },
       Description: {
-        rich_text: textChunks(jobPost.description)
+        rich_text: textChunks(jobPost.description),
       },
       Applied: {
         date: {
-          start: getTodayDate()
-        }
-      }
+          start: getTodayDate(),
+        },
+      },
     },
     children: [
       {
@@ -140,24 +160,24 @@ export async function createNotionJobPage(jobPost: JobPost, config: NotionJobCon
           rich_text: [
             {
               text: {
-                content: "Job Description"
-              }
-            }
-          ]
-        }
+                content: "Job Description",
+              },
+            },
+          ],
+        },
       },
       {
         object: "block",
         type: "paragraph",
         paragraph: {
-          rich_text: textChunks(jobPost.description)
-        }
-      }
-    ]
+          rich_text: textChunks(jobPost.description),
+        },
+      },
+    ],
   });
 
   return {
     id: page.id,
-    url: getPageUrl(page)
+    url: getPageUrl(page),
   };
 }

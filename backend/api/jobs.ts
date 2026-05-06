@@ -5,7 +5,12 @@ import { createNotionJobPage } from "../src/notionJobs.js";
 function setCorsHeaders(req: VercelRequest, res: VercelResponse): void {
   const allowedOrigin = process.env.ALLOWED_EXTENSION_ORIGIN ?? "*";
   const requestOrigin = req.headers.origin;
-  const origin = allowedOrigin === "*" ? "*" : requestOrigin === allowedOrigin ? allowedOrigin : "";
+  const origin =
+    allowedOrigin === "*"
+      ? "*"
+      : requestOrigin === allowedOrigin
+        ? allowedOrigin
+        : "";
 
   if (origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -37,7 +42,10 @@ function requireEnv(name: "NOTION_TOKEN" | "NOTION_DATABASE_ID"): string {
   return value;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   setCorsHeaders(req, res);
 
   if (req.method === "OPTIONS") {
@@ -48,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (req.method !== "POST") {
     res.status(405).json({
       ok: false,
-      error: "Method not allowed."
+      error: "Method not allowed.",
     });
     return;
   }
@@ -58,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (!isJobPost(jobPost)) {
     res.status(400).json({
       ok: false,
-      error: "Invalid job post payload."
+      error: "Invalid job post payload.",
     });
     return;
   }
@@ -66,19 +74,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   try {
     const notionPage = await createNotionJobPage(jobPost, {
       notionToken: requireEnv("NOTION_TOKEN"),
-      databaseId: requireEnv("NOTION_DATABASE_ID")
+      databaseId: requireEnv("NOTION_DATABASE_ID"),
     });
 
     res.status(201).json({
       ok: true,
-      notionPage
+      notionPage,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create Notion row.";
+    const message =
+      error instanceof Error ? error.message : "Failed to create Notion row.";
 
     res.status(500).json({
       ok: false,
-      error: message
+      error: message,
     });
   }
 }
