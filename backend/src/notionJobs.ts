@@ -31,8 +31,8 @@ export type CreatedNotionJobPage = {
 const STATUS_VALUE = "Applied";
 const MAX_RICH_TEXT_CHUNK_LENGTH = 2000;
 
-function getTodayDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function getCurrentDateTime(): string {
+  return new Date().toISOString();
 }
 
 function textChunks(value: string): Array<{ text: { content: string } }> {
@@ -148,7 +148,7 @@ export async function createNotionJobPage(
       },
       Applied: {
         date: {
-          start: getTodayDate(),
+          start: getCurrentDateTime(),
         },
       },
     },
