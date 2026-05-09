@@ -24,6 +24,7 @@ const copyCompanyButton = getElement<HTMLButtonElement>("copy-company-button");
 const copyDescriptionButton = getElement<HTMLButtonElement>(
   "copy-description-button",
 );
+const copyNotesButton = getElement<HTMLButtonElement>("copy-notes-button");
 const copyUrlButton = getElement<HTMLButtonElement>("copy-url-button");
 const copyExtractedAtButton = getElement<HTMLButtonElement>(
   "copy-extracted-at-button",
@@ -39,6 +40,7 @@ const titleElement = getElement<HTMLElement>("title-value");
 const companyElement = getElement<HTMLElement>("company-value");
 const urlElement = getElement<HTMLElement>("url-value");
 const descriptionElement = getElement<HTMLTextAreaElement>("description-value");
+const notesElement = getElement<HTMLTextAreaElement>("notes-value");
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -69,6 +71,7 @@ function setCopyButtonsEnabled(isEnabled: boolean): void {
   copyTitleButton.disabled = !isEnabled;
   copyCompanyButton.disabled = !isEnabled;
   copyDescriptionButton.disabled = !isEnabled;
+  copyNotesButton.disabled = !isEnabled;
   copyUrlButton.disabled = !isEnabled;
   copyExtractedAtButton.disabled = !isEnabled;
   copyTextButton.disabled = !isEnabled;
@@ -93,6 +96,7 @@ function renderJobPost(jobPost: JobPost): void {
   urlElement.textContent = jobPost.sourceUrl;
   urlElement.title = jobPost.sourceUrl;
   descriptionElement.value = jobPost.description || "Not found";
+  notesElement.value = jobPost.notes;
 
   setCopyButtonsEnabled(true);
 }
@@ -108,6 +112,7 @@ function isJobPost(value: unknown): value is JobPost {
     typeof candidate.title === "string" &&
     typeof candidate.company === "string" &&
     typeof candidate.description === "string" &&
+    typeof candidate.notes === "string" &&
     typeof candidate.extractedAt === "string"
   );
 }
@@ -267,6 +272,9 @@ async function addCurrentJobPostToNotion(): Promise<void> {
     return;
   }
 
+  currentJobPost.notes = notesElement.value;
+  await saveJobPost(currentJobPost);
+
   setNotionSyncLoading(true);
   setStatus("Adding job to Notion...");
 
@@ -326,6 +334,10 @@ copyDescriptionButton.addEventListener("click", () => {
   void copyCurrentJobPostField("description", "Description");
 });
 
+copyNotesButton.addEventListener("click", () => {
+  void copyCurrentJobPostField("notes", "Notes");
+});
+
 copyUrlButton.addEventListener("click", () => {
   void copyCurrentJobPostField("sourceUrl", "URL");
 });
@@ -344,4 +356,13 @@ copyMarkdownButton.addEventListener("click", () => {
 
 copyJsonButton.addEventListener("click", () => {
   void copyCurrentJobPost(formatJobPostAsJson, "JSON");
+});
+
+notesElement.addEventListener("input", () => {
+  if (!currentJobPost) {
+    return;
+  }
+
+  currentJobPost.notes = notesElement.value;
+  void saveJobPost(currentJobPost);
 });

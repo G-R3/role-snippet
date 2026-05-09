@@ -146,6 +146,9 @@ export async function createNotionJobPage(
       Description: {
         rich_text: textChunks(jobPost.description),
       },
+      Notes: {
+        rich_text: textChunks(jobPost.notes),
+      },
       Applied: {
         date: {
           start: getCurrentDateTime(),

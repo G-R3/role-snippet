@@ -3,6 +3,7 @@ export type JobPost = {
   title: string;
   company: string;
   description: string;
+  notes: string;
   extractedAt: string;
 };
 
@@ -17,6 +18,7 @@ export function isJobPost(value: unknown): value is JobPost {
     typeof candidate.title === "string" &&
     typeof candidate.company === "string" &&
     typeof candidate.description === "string" &&
+    typeof candidate.notes === "string" &&
     typeof candidate.extractedAt === "string"
   );
 }

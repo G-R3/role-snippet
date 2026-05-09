@@ -5,6 +5,7 @@ Chrome extension for extracting LinkedIn job post details and preparing them for
 ## What v1 Does
 
 - Extracts the title, company, description, source URL, and extraction timestamp from the active LinkedIn job page.
+- Lets you add optional manual notes before syncing to Notion.
 - Shows a preview in the extension popup.
 - Copies individual fields or the full job as plain text, Markdown, or JSON.
 - Adds the extracted job to a Notion database through a Vercel backend.
@@ -18,6 +19,7 @@ The backend maps extracted jobs into these Notion database properties:
 - `Status`: `Applied`.
 - `Job URL`: LinkedIn URL.
 - `Description`: job description.
+- `Notes`: optional notes entered manually in the extension.
 - `Applied`: current date.
 
 ## Development
@@ -119,6 +121,7 @@ type JobPost = {
   title: string;
   company: string;
   description: string;
+  notes: string;
   extractedAt: string;
 };
 ```

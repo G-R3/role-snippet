@@ -3,6 +3,7 @@ export type JobPost = {
   title: string;
   company: string;
   description: string;
+  notes: string;
   extractedAt: string;
 };
 
@@ -13,6 +14,7 @@ export const emptyJobPost: JobPost = {
   title: "",
   company: "",
   description: "",
+  notes: "",
   extractedAt: "",
 };
 

@@ -282,6 +282,7 @@ function extractLinkedInJobPost(): ExtractJobPostResponse {
     title: getFirstText(TITLE_SELECTORS) || getJobTitleFromLinks(jobId),
     company: getFirstText(COMPANY_SELECTORS) || getCompanyFromJobSummary(jobId),
     description: getDescriptionFromAboutSection(jobId) || getDescriptionText(),
+    notes: "",
     extractedAt: new Date().toISOString(),
   };
 
