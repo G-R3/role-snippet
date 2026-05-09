@@ -227,6 +227,11 @@ textarea {
   transition: border-color 0.1s;
 }
 
+#notes-value {
+  min-height: 50px;
+  height: 50px;
+}
+
 textarea:focus {
   outline: none;
   border-color: var(--border);
