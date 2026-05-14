@@ -5,7 +5,7 @@ import {
   type ExtractJobPostResponse,
 } from "../shared/messages";
 
-const LINKEDIN_JOB_PATH_PATTERN = /^\/jobs\//;
+const JOB_PATH_PATTERN = /^\/jobs\//;
 
 const TITLE_SELECTORS = [
   ".job-details-jobs-unified-top-card__job-title",
@@ -33,11 +33,11 @@ const DESCRIPTION_SELECTORS = [
   "[data-test-job-description]",
 ];
 
-// Ensures extraction only runs on LinkedIn job-related pages.
-function isLinkedInJobPage(): boolean {
+// Ensures extraction only runs on supported job-related pages.
+function isJobPage(): boolean {
   return (
     window.location.hostname.endsWith("linkedin.com") &&
-    LINKEDIN_JOB_PATH_PATTERN.test(window.location.pathname)
+    JOB_PATH_PATTERN.test(window.location.pathname)
   );
 }
 
@@ -74,7 +74,7 @@ function getElementMultilineText(element: HTMLElement): string {
   return normalizeMultilineText(element.innerText || element.textContent || "");
 }
 
-// Removes LinkedIn's section heading from extracted description text.
+// Removes the common section heading from extracted description text.
 function cleanDescriptionText(value: string): string {
   return value.replace(/^About the job\n?/i, "").trim();
 }
@@ -106,7 +106,7 @@ function getCurrentJobId(): string {
   return match?.[1] ?? "";
 }
 
-// Tries known LinkedIn CSS selectors before using structural fallbacks.
+// Tries known job-page CSS selectors before using structural fallbacks.
 function getFirstText(selectors: string[]): string {
   for (const selector of selectors) {
     const element = queryHTMLElement(selector);
@@ -120,7 +120,7 @@ function getFirstText(selectors: string[]): string {
   return "";
 }
 
-// Parses anchor URLs safely for matching LinkedIn job links.
+// Parses anchor URLs safely for matching job links.
 function getAnchorUrl(anchor: HTMLAnchorElement): URL | null {
   try {
     return new URL(anchor.href, window.location.href);
@@ -214,7 +214,7 @@ function getCompanyFromJobSummary(jobId: string): string {
   return summaryContainer ? getCompanyNameFromElement(summaryContainer) : "";
 }
 
-// Uses the older LinkedIn description selectors as a compatibility fallback.
+// Uses older description selectors as a compatibility fallback.
 function getDescriptionText(): string {
   for (const selector of DESCRIPTION_SELECTORS) {
     const element = queryHTMLElement(selector);
@@ -268,11 +268,11 @@ function getDescriptionFromAboutSection(jobId: string): string {
 }
 
 // Coordinates selector-based extraction with structural fallbacks.
-function extractLinkedInJobPost(): ExtractJobPostResponse {
-  if (!isLinkedInJobPage()) {
+function extractJobPost(): ExtractJobPostResponse {
+  if (!isJobPage()) {
     return {
       ok: false,
-      error: "Open a LinkedIn job post page before extracting.",
+      error: "Open a supported job post page before extracting.",
     };
   }
 
@@ -289,7 +289,7 @@ function extractLinkedInJobPost(): ExtractJobPostResponse {
   if (!jobPost.title && !jobPost.company && !jobPost.description) {
     return {
       ok: false,
-      error: "Could not find job details on this LinkedIn page.",
+      error: "Could not find job details on this page.",
     };
   }
 
@@ -309,7 +309,7 @@ chrome.runtime.onMessage.addListener(
       return false;
     }
 
-    sendResponse(extractLinkedInJobPost());
+    sendResponse(extractJobPost());
     return false;
   },
 );
