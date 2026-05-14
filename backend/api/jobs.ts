@@ -17,11 +17,23 @@ function setCorsHeaders(req: VercelRequest, res: VercelResponse): void {
   }
 
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, X-Role-Snippet-Key",
+  );
 }
 
 function isAllowedOrigin(req: VercelRequest): boolean {
   return req.headers.origin === getAllowedExtensionOrigin();
+}
+
+function isAuthorizedRequest(req: VercelRequest): boolean {
+  const apiKey = process.env.ROLE_SNIPPET_API_KEY?.trim();
+  const requestApiKey = req.headers["x-role-snippet-key"];
+
+  return (
+    typeof requestApiKey === "string" && Boolean(apiKey && requestApiKey === apiKey)
+  );
 }
 
 function parseBody(body: unknown): unknown {
@@ -61,6 +73,14 @@ export default async function handler(
     res.status(403).json({
       ok: false,
       error: "Forbidden origin.",
+    });
+    return;
+  }
+
+  if (!isAuthorizedRequest(req)) {
+    res.status(401).json({
+      ok: false,
+      error: "Unauthorized.",
     });
     return;
   }

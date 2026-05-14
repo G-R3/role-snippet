@@ -68,6 +68,7 @@ The loadable extension is emitted to `dist/`.
 NOTION_TOKEN=secret_your_notion_integration_token
 NOTION_DATABASE_ID=your_notion_database_id
 ROLE_SNIPPET_EXTENSION_ID=your_chrome_extension_id
+ROLE_SNIPPET_API_KEY=your_generated_role_snippet_api_key
 ```
 
 For production, deploy `backend/` to Vercel and add the same environment variables in the Vercel project settings.

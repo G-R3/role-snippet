@@ -1,4 +1,7 @@
-import { NOTION_BACKEND_JOBS_URL } from "./shared/config";
+import {
+  NOTION_BACKEND_JOBS_URL,
+  ROLE_SNIPPET_API_KEY,
+} from "./shared/config";
 import type { JobPost } from "./shared/job";
 import {
   type ExtensionRequest,
@@ -21,6 +24,7 @@ async function syncJobPost(jobPost: JobPost): Promise<SyncJobPostResponse> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Role-Snippet-Key": ROLE_SNIPPET_API_KEY,
       },
       body: JSON.stringify(jobPost),
     });
