@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Role Snippet",
-  "description": "Save LinkedIn job post details to Notion.",
+  "description": "Save job post details to Notion.",
   "version": "0.1.0",
   "action": {
     "default_title": "Role Snippet",
@@ -16,7 +16,7 @@
         "https://www.linkedin.com/jobs/*",
         "https://linkedin.com/jobs/*"
       ],
-      "js": ["content/linkedinExtractor.js"],
+      "js": ["content/jobExtractor.js"],
       "run_at": "document_idle"
     }
   ],

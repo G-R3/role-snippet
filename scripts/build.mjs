@@ -47,7 +47,7 @@ await mkdir(resolve(distDir, "popup"), { recursive: true });
 await esbuild.build({
   entryPoints: [
     resolve(extensionDir, "src/background.ts"),
-    resolve(extensionDir, "src/content/linkedinExtractor.ts"),
+    resolve(extensionDir, "src/content/jobExtractor.ts"),
     resolve(extensionDir, "src/popup/popup.ts"),
   ],
   bundle: true,

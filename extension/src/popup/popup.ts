@@ -135,7 +135,7 @@ async function restoreSavedJobPost(): Promise<void> {
   setStatus("Restored the last extracted job post.", "success");
 }
 
-function isLinkedInJobUrl(url: string | undefined): boolean {
+function isJobUrl(url: string | undefined): boolean {
   if (!url) {
     return false;
   }
@@ -171,8 +171,7 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
         if (lastError) {
           resolve({
             ok: false,
-            error:
-              "Could not reach the LinkedIn page. Reload the tab and try again.",
+            error: "Could not reach the job page. Reload the tab and try again.",
           });
           return;
         }
@@ -180,7 +179,7 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
         resolve(
           response ?? {
             ok: false,
-            error: "LinkedIn did not return job details.",
+            error: "The page did not return job details.",
           },
         );
       },
@@ -226,8 +225,8 @@ async function extractFromActiveTab(): Promise<void> {
   try {
     const tab = await getActiveTab();
 
-    if (!tab?.id || !isLinkedInJobUrl(tab.url)) {
-      setStatus("Open a LinkedIn job post page before extracting.", "error");
+    if (!tab?.id || !isJobUrl(tab.url)) {
+      setStatus("Open a supported job post page before extracting.", "error");
       return;
     }
 
