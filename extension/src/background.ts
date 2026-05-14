@@ -57,7 +57,7 @@ async function syncJobPost(jobPost: JobPost): Promise<SyncJobPostResponse> {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("LinkSnaggedIn installed.");
+  console.info("Role Snippet installed.");
 });
 
 chrome.runtime.onMessage.addListener(

@@ -1,6 +1,6 @@
-# LinkSnaggedIn
+# Role Snippet
 
-Chrome extension for extracting LinkedIn job post details and preparing them for Notion.
+Chrome extension for saving LinkedIn job post details to Notion.
 
 ## What v1 Does
 
@@ -67,7 +67,7 @@ The loadable extension is emitted to `dist/`.
 ```sh
 NOTION_TOKEN=secret_your_notion_integration_token
 NOTION_DATABASE_ID=your_notion_database_id
-ALLOWED_EXTENSION_ORIGIN=*
+ROLE_SNIPPET_EXTENSION_ID=your_chrome_extension_id
 ```
 
 For production, deploy `backend/` to Vercel and add the same environment variables in the Vercel project settings.
@@ -108,7 +108,7 @@ The manifest already allows local development and Vercel preview/production URLs
 3. Click Load unpacked.
 4. Select the `dist/` directory.
 5. Open a LinkedIn job page.
-6. Click the LinkSnaggedIn extension icon and choose Extract job post.
+6. Click the Role Snippet extension icon and choose Extract job post.
 7. Click Add to Notion to create a row in your configured database.
 
 ## Job Payload

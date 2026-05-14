@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "link-snagged-in-backend",
+      "name": "role-snippet-backend",
       "dependencies": {
         "@notionhq/client": "^5.20.0",
       },

@@ -1,7 +1,7 @@
 import type { JobPost } from "./job";
 
-export const EXTRACT_JOB_POST_MESSAGE = "LINK_SNAGGED_IN_EXTRACT_JOB_POST";
-export const SYNC_JOB_POST_MESSAGE = "LINK_SNAGGED_IN_SYNC_JOB_POST";
+export const EXTRACT_JOB_POST_MESSAGE = "EXTRACT_JOB_POST";
+export const SYNC_JOB_POST_MESSAGE = "SYNC_JOB_POST";
 
 export type ExtractJobPostRequest = {
   type: typeof EXTRACT_JOB_POST_MESSAGE;

@@ -2,22 +2,26 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { isJobPost } from "../src/jobPost.js";
 import { createNotionJobPage } from "../src/notionJobs.js";
 
-function setCorsHeaders(req: VercelRequest, res: VercelResponse): void {
-  const allowedOrigin = process.env.ALLOWED_EXTENSION_ORIGIN ?? "*";
-  const requestOrigin = req.headers.origin;
-  const origin =
-    allowedOrigin === "*"
-      ? "*"
-      : requestOrigin === allowedOrigin
-        ? allowedOrigin
-        : "";
+function getAllowedExtensionOrigin(): string {
+  const extensionId = process.env.ROLE_SNIPPET_EXTENSION_ID?.trim();
 
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  return extensionId ? `chrome-extension://${extensionId}` : "";
+}
+
+function setCorsHeaders(req: VercelRequest, res: VercelResponse): void {
+  const allowedOrigin = getAllowedExtensionOrigin();
+  const requestOrigin = req.headers.origin;
+
+  if (requestOrigin === allowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   }
 
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+function isAllowedOrigin(req: VercelRequest): boolean {
+  return req.headers.origin === getAllowedExtensionOrigin();
 }
 
 function parseBody(body: unknown): unknown {
@@ -50,6 +54,14 @@ export default async function handler(
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
+    return;
+  }
+
+  if (!isAllowedOrigin(req)) {
+    res.status(403).json({
+      ok: false,
+      error: "Forbidden origin.",
+    });
     return;
   }
 

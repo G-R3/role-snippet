@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "LinkSnaggedIn",
-  "description": "Extract LinkedIn job post details and prepare them for Notion.",
+  "name": "Role Snippet",
+  "description": "Save LinkedIn job post details to Notion.",
   "version": "0.1.0",
   "action": {
-    "default_title": "LinkSnaggedIn",
+    "default_title": "Role Snippet",
     "default_popup": "popup/popup.html"
   },
   "background": {
@@ -23,7 +23,7 @@
   "host_permissions": [
     "https://www.linkedin.com/jobs/*",
     "https://linkedin.com/jobs/*",
-    "https://link-snagged-in-backend.vercel.app/*"
+    "https://role-snippet-backend.vercel.app/*"
   ],
   "permissions": ["activeTab", "storage", "tabs"]
 }
