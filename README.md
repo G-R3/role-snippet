@@ -14,13 +14,13 @@ Chrome extension for saving LinkedIn job post details to Notion.
 
 The backend maps extracted jobs into these Notion database properties:
 
-- `Role`: LinkedIn job title.
-- `Company`: company name.
+- `Role`: LinkedIn job title, normalized to lowercase.
+- `Company`: company name, normalized to lowercase.
 - `Status`: `Applied`.
 - `Job URL`: LinkedIn URL.
 - `Description`: job description.
 - `Notes`: optional notes entered manually in the extension.
-- `Applied`: current date.
+- `Applied`: current timestamp.
 
 ## Development
 
@@ -73,34 +73,36 @@ ROLE_SNIPPET_API_KEY=your_generated_role_snippet_api_key
 
 For production, deploy `backend/` to Vercel and add the same environment variables in the Vercel project settings.
 
-The Vercel route in `backend/api/jobs.ts` is intentionally thin. The reusable Notion logic lives in:
+The Vercel route in `backend/api/jobs.ts` handles the HTTP request, CORS, authorization, and payload validation. The reusable job and Notion logic lives in:
 
-- `backend/src/jobPost.ts`: shared `JobPost` validation.
+- `backend/src/jobPost.ts`: `JobPost` payload validation.
 - `backend/src/notionJobs.ts`: Notion database mapping and row creation.
 
-That split keeps a future Cloudflare Workers migration smaller: a Worker would replace only the HTTP wrapper while reusing the Notion mapping module.
+That split keeps the platform-specific HTTP wrapper separate from the Notion mapping code, which should make migrations/deployment to other platforms easier.
 
 ## Extension Backend URL
 
 The extension calls the URL in `extension/src/shared/config.ts`.
 
-By default it is:
+By default it points at the deployed Vercel backend:
 
 ```ts
-export const NOTION_BACKEND_JOBS_URL = "http://localhost:3000/api/jobs";
+export const NOTION_BACKEND_JOBS_URL =
+  "https://role-snippet-backend.vercel.app/api/jobs";
 ```
 
-After deploying the backend, replace it with your Vercel URL:
+After deploying your own backend, replace it with that backend URL:
 
 ```ts
 export const NOTION_BACKEND_JOBS_URL =
   "https://your-project.vercel.app/api/jobs";
 ```
 
-The manifest already allows local development and Vercel preview/production URLs:
+The manifest must allow the backend host in `extension/manifest.json`:
 
-- `http://localhost:3000/*`
-- `https://*.vercel.app/*`
+- `https://role-snippet-backend.vercel.app/*`
+
+If you change the backend URL, update `host_permissions` to match.
 
 ## Load In Chrome
 
@@ -114,7 +116,7 @@ The manifest already allows local development and Vercel preview/production URLs
 
 ## Job Payload
 
-The extension already uses the shared `JobPost` payload:
+The extension and backend expect this `JobPost` payload shape:
 
 ```ts
 type JobPost = {
