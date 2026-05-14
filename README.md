@@ -1,6 +1,6 @@
 # Role Snippet
 
-Chrome extension for saving LinkedIn job post details to Notion.
+Chrome extension for saving job details to my Notion db.
 
 ## What v1 Does
 
