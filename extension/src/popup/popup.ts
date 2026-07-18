@@ -1,3 +1,4 @@
+import { isSupportedJobPageUrl } from "../content/extractors/registry";
 import type { JobPost, JobPostField } from "../shared/job";
 import { hasMinimumJobPostFields } from "../shared/job";
 import {
@@ -141,11 +142,7 @@ function isJobUrl(url: string | undefined): boolean {
   }
 
   try {
-    const parsedUrl = new URL(url);
-    return (
-      parsedUrl.hostname.endsWith("linkedin.com") &&
-      parsedUrl.pathname.startsWith("/jobs/")
-    );
+    return isSupportedJobPageUrl(new URL(url));
   } catch {
     return false;
   }
@@ -171,7 +168,8 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
         if (lastError) {
           resolve({
             ok: false,
-            error: "Could not reach the job page. Reload the tab and try again.",
+            error:
+              "Could not reach the job page. Reload the tab and try again.",
           });
           return;
         }
