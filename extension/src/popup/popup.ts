@@ -1,6 +1,6 @@
-import { isSupportedJobPageUrl } from "../content/extractors/registry";
 import type { JobPost, JobPostField } from "../shared/job";
 import { hasMinimumJobPostFields } from "../shared/job";
+import { isSupportedJobPageUrl } from "../shared/jobSource";
 import {
   EXTRACT_JOB_POST_MESSAGE,
   type ExtractJobPostRequest,

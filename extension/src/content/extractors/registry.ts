@@ -1,16 +1,15 @@
+import { getJobSource } from "../../shared/jobSource";
 import { ashbyExtractor } from "./ashby";
 import { linkedInExtractor } from "./linkedin";
-import type { JobPageExtractor } from "./types";
+import type { JobPageExtractor, JobPageExtractors } from "./types";
 
-const jobPageExtractors: JobPageExtractor[] = [
-  linkedInExtractor,
-  ashbyExtractor,
-];
+const jobPageExtractors: JobPageExtractors = {
+  linkedin: linkedInExtractor,
+  ashby: ashbyExtractor,
+};
 
 export function findJobPageExtractor(url: URL): JobPageExtractor | undefined {
-  return jobPageExtractors.find((extractor) => extractor.matches(url));
-}
+  const source = getJobSource(url);
 
-export function isSupportedJobPageUrl(url: URL): boolean {
-  return Boolean(findJobPageExtractor(url));
+  return source ? jobPageExtractors[source] : undefined;
 }

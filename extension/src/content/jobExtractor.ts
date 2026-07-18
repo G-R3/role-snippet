@@ -1,3 +1,4 @@
+import type { JobPost } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
   type ExtensionRequest,
@@ -16,7 +17,12 @@ function extractJobPost(): ExtractJobPostResponse {
     };
   }
 
-  const jobPost = extractor.extract();
+  const jobPost: JobPost = {
+    sourceUrl: window.location.href,
+    ...extractor.extract(),
+    notes: "",
+    extractedAt: new Date().toISOString(),
+  };
 
   if (!jobPost.title && !jobPost.company && !jobPost.description) {
     return {
