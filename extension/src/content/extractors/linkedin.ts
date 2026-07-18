@@ -1,7 +1,5 @@
-import type { JobPost } from "../../shared/job";
-import type { JobPageExtractor } from "./types";
-
-const JOB_PATH_PATTERN = /^\/jobs\//;
+import { normalizeInlineText, normalizeMultilineText } from "./text";
+import type { ExtractedJobDetails, JobPageExtractor } from "./types";
 
 const TITLE_SELECTORS = [
   ".job-details-jobs-unified-top-card__job-title",
@@ -29,29 +27,6 @@ const DESCRIPTION_SELECTORS = [
   "[data-test-job-description]",
 ];
 
-// Collapses short text fields like title and company into a single clean line.
-function normalizeInlineText(value: string): string {
-  return value
-    .replace(/\u00a0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-// Preserves meaningful job description line breaks while removing UI noise.
-function normalizeMultilineText(value: string): string {
-  const lines = value
-    .replace(/\u00a0/g, " ")
-    .replace(/\r/g, "")
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+/g, " ").trim())
-    .filter((line) => line && !/^show (more|less)$/i.test(line));
-
-  return lines
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 // Reads normalized one-line text from a DOM element.
 function getElementInlineText(element: HTMLElement): string {
   return normalizeInlineText(element.innerText || element.textContent || "");
@@ -59,7 +34,14 @@ function getElementInlineText(element: HTMLElement): string {
 
 // Reads normalized multi-line text from a DOM element.
 function getElementMultilineText(element: HTMLElement): string {
-  return normalizeMultilineText(element.innerText || element.textContent || "");
+  const value = element.innerText || element.textContent || "";
+  const withoutControlLabels = value
+    .replace(/\r/g, "")
+    .split("\n")
+    .filter((line) => !/^show (more|less)$/i.test(line.trim()))
+    .join("\n");
+
+  return normalizeMultilineText(withoutControlLabels);
 }
 
 // Removes the common section heading from extracted description text.
@@ -256,25 +238,15 @@ function getDescriptionFromAboutSection(jobId: string): string {
 }
 
 export const linkedInExtractor: JobPageExtractor = {
-  matches(url) {
-    return (
-      url.hostname.endsWith("linkedin.com") &&
-      JOB_PATH_PATTERN.test(url.pathname)
-    );
-  },
-
-  extract(): JobPost {
+  extract(): ExtractedJobDetails {
     const jobId = getCurrentJobId();
 
     return {
-      sourceUrl: window.location.href,
       title: getFirstText(TITLE_SELECTORS) || getJobTitleFromLinks(jobId),
       company:
         getFirstText(COMPANY_SELECTORS) || getCompanyFromJobSummary(jobId),
       description:
         getDescriptionFromAboutSection(jobId) || getDescriptionText(),
-      notes: "",
-      extractedAt: new Date().toISOString(),
     };
   },
 };

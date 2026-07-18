@@ -1,19 +1,12 @@
-import type { JobPost } from "../../shared/job";
-import type { JobPageExtractor } from "./types";
-
-const ASHBY_JOB_PATH_PATTERN =
-  /^\/[^/]+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i;
+import { normalizeInlineText, normalizeMultilineText } from "./text";
+import type { ExtractedJobDetails, JobPageExtractor } from "./types";
 
 type JsonRecord = Record<string, unknown>;
 
-type AshbyAppData = {
-  organization?: {
-    name?: unknown;
-  };
-  posting?: {
-    descriptionHtml?: unknown;
-    title?: unknown;
-  };
+type AshbyPageData = {
+  descriptionHtml: string;
+  organizationName: string;
+  title: string;
 };
 
 function isJsonRecord(value: unknown): value is JsonRecord {
@@ -22,27 +15,6 @@ function isJsonRecord(value: unknown): value is JsonRecord {
 
 function getString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeInlineText(value: string): string {
-  return value
-    .replace(/\u00a0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function normalizeMultilineText(value: string): string {
-  const lines = value
-    .replace(/\u00a0/g, " ")
-    .replace(/\r/g, "")
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+/g, " ").trim())
-    .filter(Boolean);
-
-  return lines
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function isJobPosting(value: JsonRecord): boolean {
@@ -98,9 +70,27 @@ function getJobPostingFromSchema(): JsonRecord | null {
   return null;
 }
 
-function getAshbyAppData(): AshbyAppData {
+function getAshbyPageData(): AshbyPageData {
   const appData = (window as Window & { __appData?: unknown }).__appData;
-  return isJsonRecord(appData) ? (appData as AshbyAppData) : {};
+
+  if (!isJsonRecord(appData)) {
+    return {
+      descriptionHtml: "",
+      organizationName: "",
+      title: "",
+    };
+  }
+
+  const organization = isJsonRecord(appData.organization)
+    ? appData.organization
+    : null;
+  const posting = isJsonRecord(appData.posting) ? appData.posting : null;
+
+  return {
+    descriptionHtml: getString(posting?.descriptionHtml),
+    organizationName: getString(organization?.name),
+    title: getString(posting?.title),
+  };
 }
 
 function htmlToMultilineText(value: string): string {
@@ -193,33 +183,23 @@ function getOrganizationName(value: unknown): string {
 }
 
 export const ashbyExtractor: JobPageExtractor = {
-  matches(url) {
-    return (
-      url.hostname === "jobs.ashbyhq.com" &&
-      ASHBY_JOB_PATH_PATTERN.test(url.pathname)
-    );
-  },
-
-  extract(): JobPost {
+  extract(): ExtractedJobDetails {
     const schema = getJobPostingFromSchema();
-    const appData = getAshbyAppData();
+    const pageData = getAshbyPageData();
 
     return {
-      sourceUrl: window.location.href,
       title:
         getString(schema?.title) ||
-        getString(appData.posting?.title) ||
+        pageData.title ||
         getElementInlineText(".ashby-job-posting-heading"),
       company:
         getOrganizationName(schema?.hiringOrganization) ||
-        getString(appData.organization?.name) ||
+        pageData.organizationName ||
         getCompanyFromDom(),
       description:
         htmlToMultilineText(getString(schema?.description)) ||
-        htmlToMultilineText(getString(appData.posting?.descriptionHtml)) ||
+        htmlToMultilineText(pageData.descriptionHtml) ||
         getDescriptionFromDom(),
-      notes: "",
-      extractedAt: new Date().toISOString(),
     };
   },
 };
