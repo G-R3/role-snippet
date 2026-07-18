@@ -14,7 +14,8 @@
     {
       "matches": [
         "https://www.linkedin.com/jobs/*",
-        "https://linkedin.com/jobs/*"
+        "https://linkedin.com/jobs/*",
+        "https://jobs.ashbyhq.com/*"
       ],
       "js": ["content/jobExtractor.js"],
       "run_at": "document_idle"
@@ -23,6 +24,7 @@
   "host_permissions": [
     "https://www.linkedin.com/jobs/*",
     "https://linkedin.com/jobs/*",
+    "https://jobs.ashbyhq.com/*",
     "https://role-snippet-backend.vercel.app/*"
   ],
   "permissions": ["activeTab", "storage", "tabs"]
