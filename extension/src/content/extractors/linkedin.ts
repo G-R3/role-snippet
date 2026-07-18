@@ -38,7 +38,7 @@ function getElementMultilineText(element: HTMLElement): string {
   const withoutControlLabels = value
     .replace(/\r/g, "")
     .split("\n")
-    .filter((line) => !/^show (more|less)$/i.test(line.trim()))
+    .filter((line) => !/^show (more|less)$/i.test(normalizeInlineText(line)))
     .join("\n");
 
   return normalizeMultilineText(withoutControlLabels);
