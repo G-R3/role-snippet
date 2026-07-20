@@ -1,7 +1,8 @@
-export type JobSource = "linkedin" | "ashby";
+export type JobSource = "linkedin" | "ashby" | "greenhouse";
 
 const ASHBY_JOB_PATH_PATTERN =
   /^\/[^/]+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i;
+const GREENHOUSE_JOB_PATH_PATTERN = /^\/[^/]+\/jobs\/\d+\/?$/;
 
 function isLinkedInJobUrl(url: URL): boolean {
   return (
@@ -17,6 +18,14 @@ function isAshbyJobUrl(url: URL): boolean {
   );
 }
 
+function isGreenhouseJobUrl(url: URL): boolean {
+  return (
+    (url.hostname === "job-boards.greenhouse.io" ||
+      url.hostname === "boards.greenhouse.io") &&
+    GREENHOUSE_JOB_PATH_PATTERN.test(url.pathname)
+  );
+}
+
 export function getJobSource(url: URL): JobSource | null {
   if (isLinkedInJobUrl(url)) {
     return "linkedin";
@@ -24,6 +33,10 @@ export function getJobSource(url: URL): JobSource | null {
 
   if (isAshbyJobUrl(url)) {
     return "ashby";
+  }
+
+  if (isGreenhouseJobUrl(url)) {
+    return "greenhouse";
   }
 
   return null;
