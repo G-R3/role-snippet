@@ -3,11 +3,13 @@ import { ashbyExtractor } from "./ashby";
 import { greenhouseExtractor } from "./greenhouse";
 import { linkedInExtractor } from "./linkedin";
 import type { JobPageExtractor, JobPageExtractors } from "./types";
+import { ycExtractor } from "./yc";
 
 const jobPageExtractors: JobPageExtractors = {
   linkedin: linkedInExtractor,
   ashby: ashbyExtractor,
   greenhouse: greenhouseExtractor,
+  yc: ycExtractor,
 };
 
 export function findJobPageExtractor(url: URL): JobPageExtractor | undefined {

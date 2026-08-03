@@ -17,7 +17,8 @@
         "https://linkedin.com/jobs/*",
         "https://jobs.ashbyhq.com/*",
         "https://job-boards.greenhouse.io/*",
-        "https://boards.greenhouse.io/*"
+        "https://boards.greenhouse.io/*",
+        "https://www.workatastartup.com/jobs/*"
       ],
       "js": ["content/jobExtractor.js"],
       "run_at": "document_idle"
@@ -29,6 +30,7 @@
     "https://jobs.ashbyhq.com/*",
     "https://job-boards.greenhouse.io/*",
     "https://boards.greenhouse.io/*",
+    "https://www.workatastartup.com/jobs/*",
     "https://role-snippet-backend.vercel.app/*"
   ],
   "permissions": ["activeTab", "storage", "tabs"]
