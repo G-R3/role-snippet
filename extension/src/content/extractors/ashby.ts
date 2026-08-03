@@ -157,6 +157,7 @@ export const ashbyExtractor: JobPageExtractor = {
         getOrganizationName(schema?.hiringOrganization) ||
         pageData.organizationName ||
         getCompanyFromDom(),
+      location: "",
       description:
         htmlToMultilineText(
           typeof schema?.description === "string"

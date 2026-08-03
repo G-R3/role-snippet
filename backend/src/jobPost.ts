@@ -2,6 +2,7 @@ export type JobPost = {
   sourceUrl: string;
   title: string;
   company: string;
+  location: string;
   description: string;
   notes: string;
   extractedAt: string;
@@ -17,6 +18,7 @@ export function isJobPost(value: unknown): value is JobPost {
     typeof candidate.sourceUrl === "string" &&
     typeof candidate.title === "string" &&
     typeof candidate.company === "string" &&
+    typeof candidate.location === "string" &&
     typeof candidate.description === "string" &&
     typeof candidate.notes === "string" &&
     typeof candidate.extractedAt === "string"

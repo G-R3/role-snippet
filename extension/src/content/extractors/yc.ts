@@ -6,7 +6,9 @@ import {
 } from "./text";
 import type { ExtractedJobDetails, JobPageExtractor } from "./types";
 
-function getPageData(): ExtractedJobDetails {
+type YcPageData = Omit<ExtractedJobDetails, "location">;
+
+function getPageData(): YcPageData {
   const rawPageData = document
     .querySelector("[data-page]")
     ?.getAttribute("data-page");
@@ -95,6 +97,7 @@ export const ycExtractor: JobPageExtractor = {
       title:
         pageData.title || getTitleFromDom() || getTitleFromMetadata(company),
       company,
+      location: "",
       description: pageData.description || getDescriptionFromMetadata(),
     };
   },

@@ -3,7 +3,7 @@ import type { JobSource } from "../../shared/jobSource";
 
 export type ExtractedJobDetails = Pick<
   JobPost,
-  "title" | "company" | "description"
+  "title" | "company" | "location" | "description"
 >;
 
 export type JobPageExtractor = {

@@ -36,6 +36,7 @@ describe("ycExtractor", () => {
     expect(ycExtractor.extract()).toEqual({
       title: "Widget Engineer",
       company: "Example Company Alpha",
+      location: "",
       description: "Build the product.\n- TypeScript\n- React",
     });
   });
@@ -58,6 +59,7 @@ describe("ycExtractor", () => {
     expect(ycExtractor.extract()).toEqual({
       title: "Platform Engineer",
       company: "Example Company",
+      location: "",
       description: "Build systems.\nWork with customers.",
     });
   });
@@ -77,6 +79,7 @@ describe("ycExtractor", () => {
     expect(ycExtractor.extract()).toEqual({
       title: "Product Designer",
       company: "Example Company Gamma",
+      location: "",
       description: "Design excellent products.",
     });
   });

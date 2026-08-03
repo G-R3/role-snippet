@@ -27,8 +27,10 @@ function getCompanyFromLogo(): string {
 export const greenhouseExtractor: JobPageExtractor = {
   extract(): ExtractedJobDetails {
     return {
-      title: getElementInlineText(".job__title h1") || getElementInlineText("h1"),
+      title:
+        getElementInlineText(".job__title h1") || getElementInlineText("h1"),
       company: getCompanyFromLogo(),
+      location: "",
       description: getElementMultilineText(".job__description"),
     };
   },
