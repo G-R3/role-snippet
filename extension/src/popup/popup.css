@@ -26,9 +26,15 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   width: 380px;
+  max-width: 380px;
+}
+
+body {
   margin: 0;
+  overflow-x: hidden;
   color: var(--text);
   background: var(--bg);
 }
@@ -166,7 +172,7 @@ dl {
 
 dl > div {
   display: grid;
-  grid-template-columns: 72px 1fr;
+  grid-template-columns: 72px minmax(0, 1fr);
   align-items: baseline;
   border-bottom: 1px solid var(--border-subtle);
   padding: 7px 10px;
@@ -186,6 +192,7 @@ dt {
 }
 
 dd {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
   font-size: 11.5px;
