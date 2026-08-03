@@ -8,9 +8,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "lint": "biome check --write .",
+    "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build": "bun scripts/build.mjs",
-    "verify": "bun run typecheck && bun run build",
+    "verify": "bun run test && bun run typecheck && bun run build",
     "backend:verify": "cd backend && bun run verify",
     "verify:all": "bun run verify && bun run backend:verify"
   },
@@ -21,6 +22,7 @@
     "@types/node": "^25.6.0",
     "@vercel/node": "^5.7.15",
     "esbuild": "^0.25.12",
+    "happy-dom": "^20.11.1",
     "typescript": "^5.9.3"
   }
 }
