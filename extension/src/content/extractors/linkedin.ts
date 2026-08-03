@@ -27,6 +27,18 @@ const DESCRIPTION_SELECTORS = [
   "[data-test-job-description]",
 ];
 
+const LOCATION_SELECTORS = [
+  ".job-details-jobs-unified-top-card__tertiary-description-container span[dir='ltr'] > .tvm__text:first-child",
+  ".jobs-unified-top-card__bullet",
+  ".topcard__flavor--bullet",
+  "[data-test-job-location]",
+];
+
+const SDUI_JOB_DETAILS_SELECTOR =
+  '[data-sdui-screen$=".SemanticJobDetails"], [data-sdui-screen$=".JobDetails"]';
+const STANDALONE_SDUI_JOB_DETAILS_SELECTOR =
+  '[data-sdui-screen$=".JobDetails"]';
+
 // Reads normalized one-line text from a DOM element.
 function getElementInlineText(element: HTMLElement): string {
   return normalizeInlineText(element.innerText || element.textContent || "");
@@ -184,6 +196,71 @@ function getCompanyFromJobSummary(jobId: string): string {
   return summaryContainer ? getCompanyNameFromElement(summaryContainer) : "";
 }
 
+// Finds the dot-separated metadata row in LinkedIn's newer SDUI job header.
+function getSduiMetadataParagraph(
+  details: HTMLElement,
+): HTMLParagraphElement | null {
+  for (const paragraph of details.querySelectorAll("p")) {
+    const metadataItems = paragraph.querySelectorAll(":scope > span");
+
+    if (
+      metadataItems.length > 1 &&
+      getElementInlineText(paragraph).includes("·")
+    ) {
+      return paragraph;
+    }
+  }
+
+  return null;
+}
+
+// Reads the standalone role from LinkedIn's page title metadata.
+function getTitleFromStandaloneSduiDetails(): string {
+  const details = queryHTMLElement(STANDALONE_SDUI_JOB_DETAILS_SELECTOR);
+
+  if (!details) {
+    return "";
+  }
+
+  const titleParts = document.title.split(" | ");
+
+  if (titleParts.length >= 3 && titleParts.at(-1) === "LinkedIn") {
+    return normalizeInlineText(titleParts.slice(0, -2).join(" | "));
+  }
+
+  return "";
+}
+
+// Narrows SDUI searches to the smallest job header containing company metadata.
+function getSduiJobHeader(details: HTMLElement): HTMLElement | null {
+  const company = details.querySelector('[aria-label^="Company,"]');
+  let current = company instanceof HTMLElement ? company : null;
+
+  for (let depth = 0; current && depth < 8; depth += 1) {
+    if (getSduiMetadataParagraph(current)) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return null;
+}
+
+// Finds location in LinkedIn's newer SDUI layouts without relying on hashed classes.
+function getLocationFromSduiDetails(): string {
+  const details = queryHTMLElement(SDUI_JOB_DETAILS_SELECTOR);
+  const header = details ? getSduiJobHeader(details) : null;
+  const metadataParagraph = header ? getSduiMetadataParagraph(header) : null;
+  const firstMetadataItem = metadataParagraph?.querySelector(":scope > span");
+
+  if (firstMetadataItem instanceof HTMLElement) {
+    return getElementInlineText(firstMetadataItem);
+  }
+
+  return "";
+}
+
 // Uses older description selectors as a compatibility fallback.
 function getDescriptionText(): string {
   for (const selector of DESCRIPTION_SELECTORS) {
@@ -242,9 +319,14 @@ export const linkedInExtractor: JobPageExtractor = {
     const jobId = getCurrentJobId();
 
     return {
-      title: getFirstText(TITLE_SELECTORS) || getJobTitleFromLinks(jobId),
+      title:
+        getFirstText(TITLE_SELECTORS) ||
+        getTitleFromStandaloneSduiDetails() ||
+        getJobTitleFromLinks(jobId),
       company:
         getFirstText(COMPANY_SELECTORS) || getCompanyFromJobSummary(jobId),
+      location:
+        getFirstText(LOCATION_SELECTORS) || getLocationFromSduiDetails(),
       description:
         getDescriptionFromAboutSection(jobId) || getDescriptionText(),
     };

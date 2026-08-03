@@ -22,6 +22,9 @@ const extractButton = getElement<HTMLButtonElement>("extract-button");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const copyTitleButton = getElement<HTMLButtonElement>("copy-title-button");
 const copyCompanyButton = getElement<HTMLButtonElement>("copy-company-button");
+const copyLocationButton = getElement<HTMLButtonElement>(
+  "copy-location-button",
+);
 const copyDescriptionButton = getElement<HTMLButtonElement>(
   "copy-description-button",
 );
@@ -39,6 +42,7 @@ const statusElement = getElement<HTMLParagraphElement>("status");
 const previewElement = getElement<HTMLElement>("preview");
 const titleElement = getElement<HTMLElement>("title-value");
 const companyElement = getElement<HTMLElement>("company-value");
+const locationElement = getElement<HTMLElement>("location-value");
 const urlElement = getElement<HTMLElement>("url-value");
 const descriptionElement = getElement<HTMLTextAreaElement>("description-value");
 const notesElement = getElement<HTMLTextAreaElement>("notes-value");
@@ -71,6 +75,7 @@ function setCopyButtonsEnabled(isEnabled: boolean): void {
   addToNotionButton.disabled = !isEnabled;
   copyTitleButton.disabled = !isEnabled;
   copyCompanyButton.disabled = !isEnabled;
+  copyLocationButton.disabled = !isEnabled;
   copyDescriptionButton.disabled = !isEnabled;
   copyNotesButton.disabled = !isEnabled;
   copyUrlButton.disabled = !isEnabled;
@@ -94,6 +99,7 @@ function renderJobPost(jobPost: JobPost): void {
   titleElement.textContent = jobPost.title || "Not found";
   titleElement.title = jobPost.title || "";
   companyElement.textContent = jobPost.company || "Not found";
+  locationElement.textContent = jobPost.location || "Not found";
   urlElement.textContent = jobPost.sourceUrl;
   urlElement.title = jobPost.sourceUrl;
   descriptionElement.value = jobPost.description || "Not found";
@@ -102,7 +108,9 @@ function renderJobPost(jobPost: JobPost): void {
   setCopyButtonsEnabled(true);
 }
 
-function isJobPost(value: unknown): value is JobPost {
+type StoredJobPost = Omit<JobPost, "location"> & { location?: string };
+
+function isStoredJobPost(value: unknown): value is StoredJobPost {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -112,6 +120,8 @@ function isJobPost(value: unknown): value is JobPost {
     typeof candidate.sourceUrl === "string" &&
     typeof candidate.title === "string" &&
     typeof candidate.company === "string" &&
+    (candidate.location === undefined ||
+      typeof candidate.location === "string") &&
     typeof candidate.description === "string" &&
     typeof candidate.notes === "string" &&
     typeof candidate.extractedAt === "string"
@@ -128,11 +138,14 @@ async function restoreSavedJobPost(): Promise<void> {
   const stored = await chrome.storage.local.get(STORED_JOB_POST_KEY);
   const savedJobPost = stored[STORED_JOB_POST_KEY];
 
-  if (!isJobPost(savedJobPost)) {
+  if (!isStoredJobPost(savedJobPost)) {
     return;
   }
 
-  renderJobPost(savedJobPost);
+  renderJobPost({
+    ...savedJobPost,
+    location: savedJobPost.location ?? "",
+  });
   setStatus("Restored the last extracted job post.", "success");
 }
 
@@ -325,6 +338,10 @@ copyTitleButton.addEventListener("click", () => {
 
 copyCompanyButton.addEventListener("click", () => {
   void copyCurrentJobPostField("company", "Company");
+});
+
+copyLocationButton.addEventListener("click", () => {
+  void copyCurrentJobPostField("location", "Location");
 });
 
 copyDescriptionButton.addEventListener("click", () => {

@@ -2,10 +2,12 @@ import type { JobPost } from "./job";
 
 export function formatJobPostAsPlainText(jobPost: JobPost): string {
   const notes = jobPost.notes.trim();
+  const location = jobPost.location.trim();
 
   return [
     `Title: ${jobPost.title}`,
     `Company: ${jobPost.company}`,
+    ...(location ? [`Location: ${location}`] : []),
     `Source: ${jobPost.sourceUrl}`,
     `Extracted: ${jobPost.extractedAt}`,
     ...(notes ? [`Notes: ${notes}`] : []),
@@ -17,11 +19,13 @@ export function formatJobPostAsPlainText(jobPost: JobPost): string {
 
 export function formatJobPostAsMarkdown(jobPost: JobPost): string {
   const notes = jobPost.notes.trim();
+  const location = jobPost.location.trim();
 
   return [
     `# ${jobPost.title}`,
     "",
     `**Company:** ${jobPost.company}`,
+    ...(location ? [`**Location:** ${location}`] : []),
     `**Source:** ${jobPost.sourceUrl}`,
     `**Extracted:** ${jobPost.extractedAt}`,
     ...(notes ? [`**Notes:** ${notes}`] : []),
