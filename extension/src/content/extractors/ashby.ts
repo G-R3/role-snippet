@@ -6,12 +6,6 @@ import {
 } from "./text";
 import type { ExtractedJobDetails, JobPageExtractor } from "./types";
 
-type AshbyPageData = {
-  descriptionHtml: string;
-  organizationName: string;
-  title: string;
-};
-
 function isJobPosting(value: JsonRecord): boolean {
   const type = value["@type"];
 
@@ -65,37 +59,14 @@ function getJobPostingFromSchema(): JsonRecord | null {
   return null;
 }
 
-function getAshbyPageData(): AshbyPageData {
-  const appData = (window as Window & { __appData?: unknown }).__appData;
-
-  if (!isJsonRecord(appData)) {
-    return {
-      descriptionHtml: "",
-      organizationName: "",
-      title: "",
-    };
-  }
-
-  const organization = isJsonRecord(appData.organization)
-    ? appData.organization
-    : null;
-  const posting = isJsonRecord(appData.posting) ? appData.posting : null;
-
-  return {
-    descriptionHtml:
-      typeof posting?.descriptionHtml === "string"
-        ? posting.descriptionHtml.trim()
-        : "",
-    organizationName:
-      typeof organization?.name === "string" ? organization.name.trim() : "",
-    title: typeof posting?.title === "string" ? posting.title.trim() : "",
-  };
+function getElementInlineTextFromElement(element: HTMLElement): string {
+  return normalizeInlineText(element.innerText || element.textContent || "");
 }
 
 function getElementInlineText(selector: string): string {
   const element = document.querySelector(selector);
   return element instanceof HTMLElement
-    ? normalizeInlineText(element.innerText || element.textContent || "")
+    ? getElementInlineTextFromElement(element)
     : "";
 }
 
@@ -137,6 +108,32 @@ function getDescriptionFromDom(): string {
   return description.replace(/\n?Apply for this Job\s*$/i, "").trim();
 }
 
+function getLocationFromSchema(value: unknown): string {
+  if (!isJsonRecord(value) || !isJsonRecord(value.address)) {
+    return "";
+  }
+
+  const address = value.address;
+
+  return ["addressLocality", "addressRegion", "addressCountry"]
+    .map((field) => address[field])
+    .filter((part): part is string => typeof part === "string")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getLocationFromDom(): string {
+  const locationHeading = Array.from(document.querySelectorAll("h2")).find(
+    (heading) => getElementInlineTextFromElement(heading) === "Location",
+  );
+  const location = locationHeading?.parentElement?.querySelector("p");
+
+  return location instanceof HTMLElement
+    ? getElementInlineTextFromElement(location)
+    : "";
+}
+
 function getOrganizationName(value: unknown): string {
   return isJsonRecord(value) && typeof value.name === "string"
     ? value.name.trim()
@@ -146,26 +143,21 @@ function getOrganizationName(value: unknown): string {
 export const ashbyExtractor: JobPageExtractor = {
   extract(): ExtractedJobDetails {
     const schema = getJobPostingFromSchema();
-    const pageData = getAshbyPageData();
 
     return {
       title:
         (typeof schema?.title === "string" ? schema.title.trim() : "") ||
-        pageData.title ||
         getElementInlineText(".ashby-job-posting-heading"),
       company:
-        getOrganizationName(schema?.hiringOrganization) ||
-        pageData.organizationName ||
-        getCompanyFromDom(),
-      location: "",
+        getOrganizationName(schema?.hiringOrganization) || getCompanyFromDom(),
+      location:
+        getLocationFromSchema(schema?.jobLocation) || getLocationFromDom(),
       description:
         htmlToMultilineText(
           typeof schema?.description === "string"
             ? schema.description.trim()
             : "",
-        ) ||
-        htmlToMultilineText(pageData.descriptionHtml) ||
-        getDescriptionFromDom(),
+        ) || getDescriptionFromDom(),
     };
   },
 };
