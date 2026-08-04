@@ -85,7 +85,7 @@ Build resilient backend systems.</div>
     setPage(
       "https://www.linkedin.com/jobs/view/3333333333/",
       `
-        <a href="/jobs/view/3333333333/"><span>Get hired for $0</span></a>
+        <a href="/jobs/view/3333333333/"><span>Example promotion</span></a>
         <div data-sdui-screen="com.linkedin.sdui.flagshipnav.jobs.JobDetails">
           <a href="/company/example-company-zeta/life/">
             <div aria-label="Company, Example Company Zeta."><p>Example Company Zeta</p></div>
@@ -118,7 +118,7 @@ Build resilient backend systems.</div>
       "https://www.linkedin.com/jobs/view/4444444444/",
       `
         <h1>Platform Engineer</h1>
-        <div class="topcard__org-name-link">Example Company</div>
+        <div class="topcard__org-name-link">Example Company Eta</div>
         <div id="job-details">About the job
 Operate the platform.</div>
       `,
@@ -126,7 +126,7 @@ Operate the platform.</div>
 
     expect(linkedInExtractor.extract()).toEqual({
       title: "Platform Engineer",
-      company: "Example Company",
+      company: "Example Company Eta",
       location: "",
       description: "Operate the platform.",
     });

@@ -1,4 +1,4 @@
-export type JobSource = "linkedin" | "ashby" | "greenhouse" | "yc";
+export type JobSource = "linkedin" | "ashby" | "greenhouse" | "indeed" | "yc";
 
 const ASHBY_JOB_PATH_PATTERN =
   /^\/[^/]+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i;
@@ -27,6 +27,14 @@ function isGreenhouseJobUrl(url: URL): boolean {
   );
 }
 
+function isIndeedJobUrl(url: URL): boolean {
+  return (
+    url.hostname === "www.indeed.com" &&
+    url.pathname === "/viewjob" &&
+    Boolean(url.searchParams.get("jk"))
+  );
+}
+
 function isYcJobUrl(url: URL): boolean {
   return (
     url.hostname === "www.workatastartup.com" &&
@@ -45,6 +53,10 @@ export function getJobSource(url: URL): JobSource | null {
 
   if (isGreenhouseJobUrl(url)) {
     return "greenhouse";
+  }
+
+  if (isIndeedJobUrl(url)) {
+    return "indeed";
   }
 
   if (isYcJobUrl(url)) {

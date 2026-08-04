@@ -1,6 +1,7 @@
 import { getJobSource } from "../../shared/jobSource";
 import { ashbyExtractor } from "./ashby";
 import { greenhouseExtractor } from "./greenhouse";
+import { indeedExtractor } from "./indeed";
 import { linkedInExtractor } from "./linkedin";
 import type { JobPageExtractor, JobPageExtractors } from "./types";
 import { ycExtractor } from "./yc";
@@ -9,6 +10,7 @@ const jobPageExtractors: JobPageExtractors = {
   linkedin: linkedInExtractor,
   ashby: ashbyExtractor,
   greenhouse: greenhouseExtractor,
+  indeed: indeedExtractor,
   yc: ycExtractor,
 };
 

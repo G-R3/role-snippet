@@ -6,8 +6,8 @@ describe("buildNotionJobProperties", () => {
   test("maps location to the existing Notion column", () => {
     const jobPost: JobPost = {
       sourceUrl: "https://www.linkedin.com/jobs/view/0000000000",
-      title: "Software Engineer",
-      company: "Example Company",
+      title: "Widget Engineer",
+      company: "Example Company Theta",
       location: "New York, NY",
       description: "Build software.",
       notes: "",

@@ -8,8 +8,8 @@ import {
 describe("isJobPost", () => {
   const jobPost: JobPost = {
     sourceUrl: "https://www.linkedin.com/jobs/view/0000000000",
-    title: "Software Engineer",
-    company: "Example Company",
+    title: "Widget Engineer",
+    company: "Example Company Xi",
     location: "New York, NY",
     description: "Build software.",
     notes: "",

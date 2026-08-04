@@ -25,8 +25,7 @@ describe("ycExtractor", () => {
       props: {
         job: {
           title: "Widget Engineer",
-          location:
-            "North Harbor / South Harbor / Remote",
+          location: "North Harbor / South Harbor / Remote",
           descriptionHtml:
             "<p>Build the product.</p><ul><li>TypeScript</li><li>React</li></ul>",
         },
@@ -37,8 +36,7 @@ describe("ycExtractor", () => {
     expect(ycExtractor.extract()).toEqual({
       title: "Widget Engineer",
       company: "Example Company Alpha",
-      location:
-        "North Harbor / South Harbor / Remote",
+      location: "North Harbor / South Harbor / Remote",
       description: "Build the product.\n- TypeScript\n- React",
     });
   });
@@ -48,10 +46,10 @@ describe("ycExtractor", () => {
       <div data-page="not-json"></div>
       <div><svg data-icon="location-dot"></svg><span>Unrelated location</span></div>
       <section>
-        <h1>Platform Engineer at <a href="/companies/example-company">Example Company</a></h1>
+        <h1>Platform Tinkerer at <a href="/companies/example-company-beta">Example Company Beta</a></h1>
         <div><svg data-icon="location-dot"></svg><span>Remote (US)</span></div>
       </section>
-      <meta property="og:title" content="Platform Engineer at Example Company | Jobs">
+      <meta property="og:title" content="Platform Tinkerer at Example Company Beta | Jobs">
     `);
     const description = document.createElement("meta");
     description.setAttribute("property", "og:description");
@@ -63,8 +61,8 @@ describe("ycExtractor", () => {
     document.head.append(description);
 
     expect(ycExtractor.extract()).toEqual({
-      title: "Platform Engineer",
-      company: "Example Company",
+      title: "Platform Tinkerer",
+      company: "Example Company Beta",
       location: "Remote (US)",
       description: "Build systems.\nWork with customers.",
     });
@@ -72,7 +70,7 @@ describe("ycExtractor", () => {
 
   test("handles partial and incorrectly typed structured data", () => {
     setDocument(`
-      <h1>Product Designer at <a href="/companies/example-company-gamma">Example Company Gamma</a></h1>
+      <h1>Widget Designer at <a href="/companies/example-company-gamma">Example Company Gamma</a></h1>
       <meta property="og:description" content="Design excellent products.">
     `);
     addPageData({
@@ -83,7 +81,7 @@ describe("ycExtractor", () => {
     });
 
     expect(ycExtractor.extract()).toEqual({
-      title: "Product Designer",
+      title: "Widget Designer",
       company: "Example Company Gamma",
       location: "",
       description: "Design excellent products.",

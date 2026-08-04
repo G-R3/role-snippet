@@ -24,7 +24,7 @@ describe("ashbyExtractor", () => {
       <script type="application/ld+json">
         {
           "@type": "JobPosting",
-          "title": "Widget Engineer - Remote",
+          "title": "Widget Engineer – Remote",
           "hiringOrganization": { "name": "Example Company Iota" },
           "jobLocation": {
             "@type": "Place",
@@ -39,7 +39,7 @@ describe("ashbyExtractor", () => {
     `);
 
     expect(ashbyExtractor.extract()).toEqual({
-      title: "Widget Engineer - Remote",
+      title: "Widget Engineer – Remote",
       company: "Example Company Iota",
       location: "United States",
       description: "Build example software.\n- TypeScript\n- Rust",
@@ -57,7 +57,7 @@ describe("ashbyExtractor", () => {
           }
         }
       </script>
-      <header class="ashby-job-posting-header"><img alt="Example Company"></header>
+      <header class="ashby-job-posting-header"><img alt="Example Company Kappa"></header>
       <h1 class="ashby-job-posting-heading">Product Engineer</h1>
       <aside>
         <section><h2>Location</h2><p>Remote - Americas</p></section>
@@ -68,7 +68,7 @@ describe("ashbyExtractor", () => {
 
     expect(ashbyExtractor.extract()).toEqual({
       title: "Product Engineer",
-      company: "Example Company",
+      company: "Example Company Kappa",
       location: "Remote - Americas",
       description: "Build products.",
     });

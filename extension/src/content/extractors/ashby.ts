@@ -1,63 +1,11 @@
-import { isJsonRecord, type JsonRecord } from "./json";
+import { getJobPostingFromJsonLd } from "./jobPostingSchema";
+import { isJsonRecord } from "./json";
 import {
   htmlToMultilineText,
   normalizeInlineText,
   normalizeMultilineText,
 } from "./text";
 import type { ExtractedJobDetails, JobPageExtractor } from "./types";
-
-function isJobPosting(value: JsonRecord): boolean {
-  const type = value["@type"];
-
-  return (
-    type === "JobPosting" ||
-    (Array.isArray(type) && type.some((entry) => entry === "JobPosting"))
-  );
-}
-
-function getJobPosting(value: unknown): JsonRecord | null {
-  if (Array.isArray(value)) {
-    for (const entry of value) {
-      const jobPosting = getJobPosting(entry);
-
-      if (jobPosting) {
-        return jobPosting;
-      }
-    }
-
-    return null;
-  }
-
-  if (!isJsonRecord(value)) {
-    return null;
-  }
-
-  if (isJobPosting(value)) {
-    return value;
-  }
-
-  return getJobPosting(value["@graph"]);
-}
-
-function getJobPostingFromSchema(): JsonRecord | null {
-  const scripts = document.querySelectorAll<HTMLScriptElement>(
-    'script[type="application/ld+json"]',
-  );
-
-  for (const script of scripts) {
-    try {
-      const jobPosting = getJobPosting(JSON.parse(script.textContent ?? ""));
-
-      if (jobPosting) {
-        return jobPosting;
-      }
-    } catch {
-      // Ignore malformed structured data and continue to DOM fallbacks.
-    }
-  }
-
-  return null;
-}
 
 function getElementInlineTextFromElement(element: HTMLElement): string {
   return normalizeInlineText(element.innerText || element.textContent || "");
@@ -142,7 +90,7 @@ function getOrganizationName(value: unknown): string {
 
 export const ashbyExtractor: JobPageExtractor = {
   extract(): ExtractedJobDetails {
-    const schema = getJobPostingFromSchema();
+    const schema = getJobPostingFromJsonLd();
 
     return {
       title:

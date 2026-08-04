@@ -43,18 +43,18 @@ describe("greenhouseExtractor", () => {
 
   test("extracts the linked-logo and remote-location page layout", () => {
     setPage(`
-      <meta property="og:title" content="Widget Engineer">
+      <meta property="og:title" content="Service Engineer">
       <meta property="og:description" content="United States - Remote">
       <a class="logo"><img alt="Example Company Mu Logo"></a>
       <div class="job__title">
-        <h1>Widget Engineer</h1>
+        <h1>Service Engineer</h1>
         <div class="job__location"><svg></svg><div>United States - Remote</div></div>
       </div>
       <div class="job__description">Build internal software.</div>
     `);
 
     expect(greenhouseExtractor.extract()).toEqual({
-      title: "Widget Engineer",
+      title: "Service Engineer",
       company: "Example Company Mu",
       location: "United States - Remote",
       description: "Build internal software.",
@@ -65,14 +65,14 @@ describe("greenhouseExtractor", () => {
     setPage(`
       <meta property="og:title" content="Platform Engineer">
       <meta property="og:description" content="Remote - Americas">
-      <a class="logo"><img alt="Example Company Logo"></a>
+      <a class="logo"><img alt="Example Company Nu Logo"></a>
       <h1>About the role</h1>
       <div class="job__description">Build systems.</div>
     `);
 
     expect(greenhouseExtractor.extract()).toEqual({
       title: "Platform Engineer",
-      company: "Example Company",
+      company: "Example Company Nu",
       location: "",
       description: "Build systems.",
     });
