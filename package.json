@@ -7,17 +7,20 @@
   "packageManager": "bun@1.3.5",
   "scripts": {
     "clean": "rm -rf dist",
-    "lint": "biome check --write .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "build": "bun scripts/build.mjs",
-    "verify": "bun run test && bun run typecheck && bun run build",
+    "verify": "bun run lint && bun run test && bun run typecheck && bun run typecheck:tests && bun run build",
     "backend:verify": "cd backend && bun run verify",
     "verify:all": "bun run verify && bun run backend:verify"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.14",
     "@notionhq/client": "^5.20.0",
+    "@types/bun": "^1.3.5",
     "@types/chrome": "^0.0.326",
     "@types/node": "^25.6.0",
     "@vercel/node": "^5.7.15",

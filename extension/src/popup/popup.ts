@@ -1,5 +1,5 @@
 import type { JobPost, JobPostField } from "../shared/job";
-import { hasMinimumJobPostFields } from "../shared/job";
+import { hasMinimumJobPostFields, isJobPost } from "../shared/job";
 import { isSupportedJobPageUrl } from "../shared/jobSource";
 import {
   EXTRACT_JOB_POST_MESSAGE,
@@ -108,26 +108,6 @@ function renderJobPost(jobPost: JobPost): void {
   setCopyButtonsEnabled(true);
 }
 
-type StoredJobPost = Omit<JobPost, "location"> & { location?: string };
-
-function isStoredJobPost(value: unknown): value is StoredJobPost {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<Record<JobPostField, unknown>>;
-  return (
-    typeof candidate.sourceUrl === "string" &&
-    typeof candidate.title === "string" &&
-    typeof candidate.company === "string" &&
-    (candidate.location === undefined ||
-      typeof candidate.location === "string") &&
-    typeof candidate.description === "string" &&
-    typeof candidate.notes === "string" &&
-    typeof candidate.extractedAt === "string"
-  );
-}
-
 async function saveJobPost(jobPost: JobPost): Promise<void> {
   await chrome.storage.local.set({
     [STORED_JOB_POST_KEY]: jobPost,
@@ -138,14 +118,11 @@ async function restoreSavedJobPost(): Promise<void> {
   const stored = await chrome.storage.local.get(STORED_JOB_POST_KEY);
   const savedJobPost = stored[STORED_JOB_POST_KEY];
 
-  if (!isStoredJobPost(savedJobPost)) {
+  if (!isJobPost(savedJobPost)) {
     return;
   }
 
-  renderJobPost({
-    ...savedJobPost,
-    location: savedJobPost.location ?? "",
-  });
+  renderJobPost(savedJobPost);
   setStatus("Restored the last extracted job post.", "success");
 }
 

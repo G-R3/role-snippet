@@ -6,22 +6,20 @@ import {
 } from "./text";
 import type { ExtractedJobDetails, JobPageExtractor } from "./types";
 
-type YcPageData = Omit<ExtractedJobDetails, "location">;
-
-function getPageData(): YcPageData {
+function getPageData(): ExtractedJobDetails {
   const rawPageData = document
     .querySelector("[data-page]")
     ?.getAttribute("data-page");
 
   if (!rawPageData) {
-    return { title: "", company: "", description: "" };
+    return { title: "", company: "", location: "", description: "" };
   }
 
   try {
     const pageData: unknown = JSON.parse(rawPageData);
 
     if (!isJsonRecord(pageData) || !isJsonRecord(pageData.props)) {
-      return { title: "", company: "", description: "" };
+      return { title: "", company: "", location: "", description: "" };
     }
 
     const job = isJsonRecord(pageData.props.job) ? pageData.props.job : null;
@@ -32,6 +30,7 @@ function getPageData(): YcPageData {
     return {
       title: typeof job?.title === "string" ? job.title.trim() : "",
       company: typeof company?.name === "string" ? company.name.trim() : "",
+      location: typeof job?.location === "string" ? job.location.trim() : "",
       description: htmlToMultilineText(
         typeof job?.descriptionHtml === "string"
           ? job.descriptionHtml.trim()
@@ -39,7 +38,7 @@ function getPageData(): YcPageData {
       ),
     };
   } catch {
-    return { title: "", company: "", description: "" };
+    return { title: "", company: "", location: "", description: "" };
   }
 }
 
@@ -58,6 +57,15 @@ function getTitleFromDom(): string {
   return normalizeInlineText(leadingText)
     .replace(/\s+at$/i, "")
     .trim();
+}
+
+function getLocationFromDom(): string {
+  const locationIcon = document
+    .querySelector("h1")
+    ?.parentElement?.querySelector('svg[data-icon="location-dot"]');
+  const location = locationIcon?.parentElement?.querySelector(":scope > span");
+
+  return normalizeInlineText(location?.textContent ?? "");
 }
 
 function getMetaContent(property: string): string {
@@ -97,7 +105,7 @@ export const ycExtractor: JobPageExtractor = {
       title:
         pageData.title || getTitleFromDom() || getTitleFromMetadata(company),
       company,
-      location: "",
+      location: pageData.location || getLocationFromDom(),
       description: pageData.description || getDescriptionFromMetadata(),
     };
   },

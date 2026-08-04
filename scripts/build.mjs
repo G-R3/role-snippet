@@ -59,7 +59,9 @@ await esbuild.build({
   minify: false,
   logLevel: "info",
   define: {
-    __ROLE_SNIPPET_API_KEY__: JSON.stringify(process.env.ROLE_SNIPPET_API_KEY ?? ""),
+    __ROLE_SNIPPET_API_KEY__: JSON.stringify(
+      process.env.ROLE_SNIPPET_API_KEY ?? "",
+    ),
   },
 });
 

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["bun", "chrome", "node"]
+  },
+  "include": ["tests/**/*.ts"]
+}

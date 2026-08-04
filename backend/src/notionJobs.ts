@@ -84,6 +84,38 @@ function buildStatusProperty(
   };
 }
 
+export function buildNotionJobProperties(
+  jobPost: JobPost,
+  statusPropertyType: string | undefined,
+): Record<string, NotionProperty> {
+  return {
+    Role: {
+      title: textChunks(lowercaseField(jobPost.title)),
+    },
+    Company: {
+      rich_text: textChunks(lowercaseField(jobPost.company)),
+    },
+    Location: {
+      rich_text: textChunks(jobPost.location),
+    },
+    Status: buildStatusProperty(statusPropertyType),
+    "Job URL": {
+      url: jobPost.sourceUrl,
+    },
+    Description: {
+      rich_text: textChunks(jobPost.description),
+    },
+    Notes: {
+      rich_text: textChunks(jobPost.notes),
+    },
+    Applied: {
+      date: {
+        start: getCurrentDateTime(),
+      },
+    },
+  };
+}
+
 function hasDatabaseProperties(
   value: unknown,
 ): value is NotionDatabaseWithProperties {
@@ -132,29 +164,7 @@ export async function createNotionJobPage(
     parent: {
       database_id: config.databaseId,
     },
-    properties: {
-      Role: {
-        title: textChunks(lowercaseField(jobPost.title)),
-      },
-      Company: {
-        rich_text: textChunks(lowercaseField(jobPost.company)),
-      },
-      Status: buildStatusProperty(statusPropertyType),
-      "Job URL": {
-        url: jobPost.sourceUrl,
-      },
-      Description: {
-        rich_text: textChunks(jobPost.description),
-      },
-      Notes: {
-        rich_text: textChunks(jobPost.notes),
-      },
-      Applied: {
-        date: {
-          start: getCurrentDateTime(),
-        },
-      },
-    },
+    properties: buildNotionJobProperties(jobPost, statusPropertyType),
     children: [
       {
         object: "block",

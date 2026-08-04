@@ -32,7 +32,8 @@ function isAuthorizedRequest(req: VercelRequest): boolean {
   const requestApiKey = req.headers["x-role-snippet-key"];
 
   return (
-    typeof requestApiKey === "string" && Boolean(apiKey && requestApiKey === apiKey)
+    typeof requestApiKey === "string" &&
+    Boolean(apiKey && requestApiKey === apiKey)
   );
 }
 

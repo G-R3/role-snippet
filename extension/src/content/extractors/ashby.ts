@@ -52,7 +52,7 @@ function getJobPostingFromSchema(): JsonRecord | null {
         return jobPosting;
       }
     } catch {
-      // Ignore malformed structured data and continue to Ashby's page data.
+      // Ignore malformed structured data and continue to DOM fallbacks.
     }
   }
 

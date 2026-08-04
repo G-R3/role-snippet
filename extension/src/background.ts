@@ -1,7 +1,4 @@
-import {
-  NOTION_BACKEND_JOBS_URL,
-  ROLE_SNIPPET_API_KEY,
-} from "./shared/config";
+import { NOTION_BACKEND_JOBS_URL, ROLE_SNIPPET_API_KEY } from "./shared/config";
 import type { JobPost } from "./shared/job";
 import {
   type ExtensionRequest,

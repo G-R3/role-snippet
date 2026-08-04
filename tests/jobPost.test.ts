@@ -1,21 +1,28 @@
 import { describe, expect, test } from "bun:test";
-import { isJobPost } from "../backend/src/jobPost";
+import {
+  isJobPost,
+  JOB_POST_FIELDS,
+  type JobPost,
+} from "../backend/src/jobPost";
 
 describe("isJobPost", () => {
-  test("requires the shared location field", () => {
-    const jobPost = {
-      sourceUrl: "https://www.linkedin.com/jobs/view/0000000000",
-      title: "Software Engineer",
-      company: "Example Company",
-      location: "New York, NY",
-      description: "Build software.",
-      notes: "",
-      extractedAt: "2026-08-03T00:00:00.000Z",
-    };
+  const jobPost: JobPost = {
+    sourceUrl: "https://www.linkedin.com/jobs/view/0000000000",
+    title: "Software Engineer",
+    company: "Example Company",
+    location: "New York, NY",
+    description: "Build software.",
+    notes: "",
+    extractedAt: "2026-08-03T00:00:00.000Z",
+  };
 
+  test("validates every canonical field", () => {
     expect(isJobPost(jobPost)).toBe(true);
 
-    const { location: _location, ...jobPostWithoutLocation } = jobPost;
-    expect(isJobPost(jobPostWithoutLocation)).toBe(false);
+    for (const field of JOB_POST_FIELDS) {
+      const candidate: Partial<JobPost> = { ...jobPost };
+      delete candidate[field];
+      expect(isJobPost(candidate)).toBe(false);
+    }
   });
 });

@@ -1,8 +1,7 @@
-import type { JobPost } from "../../../backend/src/jobPost";
+import type { JobPost, JobPostField } from "../../../backend/src/jobPost";
 
-export type { JobPost };
-
-export type JobPostField = keyof JobPost;
+export { isJobPost } from "../../../backend/src/jobPost";
+export type { JobPost, JobPostField };
 
 export const emptyJobPost: JobPost = {
   sourceUrl: "",
