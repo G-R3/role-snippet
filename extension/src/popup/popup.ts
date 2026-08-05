@@ -5,7 +5,6 @@ import {
   isJobPost,
   JOB_POST_FIELDS,
 } from "../shared/job";
-import { isSupportedJobPageUrl } from "../shared/jobSource";
 import {
   EXTRACT_JOB_POST_MESSAGE,
   type ExtractJobPostRequest,
@@ -19,10 +18,10 @@ import {
   readFromInputs,
   writeToInputs,
 } from "./jobPostForm";
+import { initializePopup } from "./popupInitialization";
 
 const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
-const extractButton = getElement<HTMLButtonElement>("extract-button");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const statusElement = getElement<HTMLParagraphElement>("status");
 const fieldElements = {
@@ -53,11 +52,6 @@ function setStatus(
   statusElement.classList.toggle("error", tone === "error");
 }
 
-function setLoading(isLoading: boolean): void {
-  extractButton.disabled = isLoading;
-  extractButton.textContent = isLoading ? "Extracting..." : "Extract job post";
-}
-
 function setNotionSyncLoading(isLoading: boolean): void {
   addToNotionButton.disabled = isLoading;
   addToNotionButton.textContent = isLoading
@@ -71,28 +65,16 @@ async function saveJobPost(jobPost: JobPost): Promise<void> {
   });
 }
 
-async function restoreSavedJobPost(): Promise<void> {
+async function restoreSavedJobPost(): Promise<JobPost | null> {
   const stored = await chrome.storage.local.get(STORED_JOB_POST_KEY);
   const savedJobPost = stored[STORED_JOB_POST_KEY];
 
   if (!isJobPost(savedJobPost)) {
-    return;
+    return null;
   }
 
   writeToInputs(fieldElements, savedJobPost);
-  setStatus("Restored the saved job post.", "success");
-}
-
-function isJobUrl(url: string | undefined): boolean {
-  if (!url) {
-    return false;
-  }
-
-  try {
-    return isSupportedJobPageUrl(new URL(url));
-  } catch {
-    return false;
-  }
+  return savedJobPost;
 }
 
 async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
@@ -163,44 +145,31 @@ function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
   });
 }
 
-async function extractFromActiveTab(): Promise<void> {
-  setLoading(true);
+async function extractFromTab(tabId: number): Promise<void> {
   setStatus("Looking for job details...");
+  const response = await sendExtractMessage(tabId);
+
+  if (!response.ok) {
+    setStatus(response.error, "error");
+    return;
+  }
+
+  writeToInputs(fieldElements, response.jobPost);
 
   try {
-    const tab = await getActiveTab();
-
-    if (!tab?.id || !isJobUrl(tab.url)) {
-      setStatus("Open a supported job post page before extracting.", "error");
-      return;
-    }
-
-    const response = await sendExtractMessage(tab.id);
-
-    if (!response.ok) {
-      setStatus(response.error, "error");
-      return;
-    }
-
-    writeToInputs(fieldElements, response.jobPost);
-
-    try {
-      await saveJobPost(response.jobPost);
-    } catch {
-      setStatus("Job extracted, but could not save it.", "error");
-      return;
-    }
-
-    const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
-      ? "Job post extracted."
-      : "Extracted partial job details. Review before adding to Notion.";
-    setStatus(
-      confidenceMessage,
-      hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral",
-    );
-  } finally {
-    setLoading(false);
+    await saveJobPost(response.jobPost);
+  } catch {
+    setStatus("Job extracted, but could not save it.", "error");
+    return;
   }
+
+  const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
+    ? "Job post extracted."
+    : "Extracted partial job details. Review before adding to Notion.";
+  setStatus(
+    confidenceMessage,
+    hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral",
+  );
 }
 
 async function addCurrentJobPostToNotion(): Promise<void> {
@@ -232,11 +201,6 @@ async function addCurrentJobPostToNotion(): Promise<void> {
 }
 
 writeToInputs(fieldElements, emptyJobPost);
-void restoreSavedJobPost();
-
-extractButton.addEventListener("click", () => {
-  void extractFromActiveTab();
-});
 
 addToNotionButton.addEventListener("click", () => {
   void addCurrentJobPostToNotion();
@@ -249,3 +213,13 @@ for (const field of JOB_POST_FIELDS) {
     });
   });
 }
+
+void initializePopup({
+  restoreSavedJobPost,
+  getActiveTab,
+  extractFromTab,
+  setStatus,
+  setSyncDisabled(disabled) {
+    addToNotionButton.disabled = disabled;
+  },
+});

@@ -49,5 +49,5 @@ If the host changes, update `host_permissions` in `extension/manifest.json`.
 3. Click Load unpacked.
 4. Select the `dist/` directory.
 5. Open a job page.
-6. Click the Role Snippet extension icon and choose Extract job post.
-7. Click Add to Notion to create a row in your configured database.
+6. Click the Role Snippet extension icon to extract the job post.
+7. Review the details, then click Add to Notion to create a row in your configured database.
