@@ -1,4 +1,4 @@
-import type { JobPost, JobPostField } from "../shared/job";
+import type { JobPost } from "../shared/job";
 import {
   emptyJobPost,
   hasMinimumJobPostFields,
@@ -15,11 +15,6 @@ import {
   type SyncJobPostResponse,
 } from "../shared/messages";
 import {
-  formatJobPostAsJson,
-  formatJobPostAsMarkdown,
-  formatJobPostAsPlainText,
-} from "../shared/notionExport";
-import {
   type JobPostInputElements,
   readFromInputs,
   writeToInputs,
@@ -29,21 +24,6 @@ const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
 const extractButton = getElement<HTMLButtonElement>("extract-button");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
-const copyTitleButton = getElement<HTMLButtonElement>("copy-title-button");
-const copyCompanyButton = getElement<HTMLButtonElement>("copy-company-button");
-const copyLocationButton = getElement<HTMLButtonElement>(
-  "copy-location-button",
-);
-const copyDescriptionButton = getElement<HTMLButtonElement>(
-  "copy-description-button",
-);
-const copyNotesButton = getElement<HTMLButtonElement>("copy-notes-button");
-const copyUrlButton = getElement<HTMLButtonElement>("copy-url-button");
-const copyTextButton = getElement<HTMLButtonElement>("copy-text-button");
-const copyMarkdownButton = getElement<HTMLButtonElement>(
-  "copy-markdown-button",
-);
-const copyJsonButton = getElement<HTMLButtonElement>("copy-json-button");
 const statusElement = getElement<HTMLParagraphElement>("status");
 const fieldElements = {
   sourceUrl: getElement<HTMLInputElement>("url-value"),
@@ -213,7 +193,7 @@ async function extractFromActiveTab(): Promise<void> {
 
     const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
       ? "Job post extracted."
-      : "Extracted partial job details. Review before copying.";
+      : "Extracted partial job details. Review before adding to Notion.";
     setStatus(
       confidenceMessage,
       hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral",
@@ -221,14 +201,6 @@ async function extractFromActiveTab(): Promise<void> {
   } finally {
     setLoading(false);
   }
-}
-
-async function copyCurrentJobPost(
-  formatter: (jobPost: JobPost) => string,
-  label: string,
-): Promise<void> {
-  await navigator.clipboard.writeText(formatter(readFromInputs(fieldElements)));
-  setStatus(`${label} copied to clipboard.`, "success");
 }
 
 async function addCurrentJobPostToNotion(): Promise<void> {
@@ -259,21 +231,6 @@ async function addCurrentJobPostToNotion(): Promise<void> {
   }
 }
 
-async function copyCurrentJobPostField(
-  field: JobPostField,
-  label: string,
-): Promise<void> {
-  const value = readFromInputs(fieldElements)[field].trim();
-
-  if (!value) {
-    setStatus(`${label} is empty.`, "error");
-    return;
-  }
-
-  await navigator.clipboard.writeText(value);
-  setStatus(`${label} copied to clipboard.`, "success");
-}
-
 writeToInputs(fieldElements, emptyJobPost);
 void restoreSavedJobPost();
 
@@ -283,42 +240,6 @@ extractButton.addEventListener("click", () => {
 
 addToNotionButton.addEventListener("click", () => {
   void addCurrentJobPostToNotion();
-});
-
-copyTitleButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("title", "Title");
-});
-
-copyCompanyButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("company", "Company");
-});
-
-copyLocationButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("location", "Location");
-});
-
-copyDescriptionButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("description", "Description");
-});
-
-copyNotesButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("notes", "Notes");
-});
-
-copyUrlButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("sourceUrl", "URL");
-});
-
-copyTextButton.addEventListener("click", () => {
-  void copyCurrentJobPost(formatJobPostAsPlainText, "Plain text");
-});
-
-copyMarkdownButton.addEventListener("click", () => {
-  void copyCurrentJobPost(formatJobPostAsMarkdown, "Markdown");
-});
-
-copyJsonButton.addEventListener("click", () => {
-  void copyCurrentJobPost(formatJobPostAsJson, "JSON");
 });
 
 for (const field of JOB_POST_FIELDS) {

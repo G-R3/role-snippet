@@ -245,48 +245,4 @@ textarea:focus {
 
 .notion-sync {
   display: grid;
-  margin-bottom: 20px;
-}
-
-/* ── Copy groups ─────────────────────────── */
-
-.copy-group {
-  display: grid;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.copy-group + .copy-group {
-  margin-top: 0;
-}
-
-h2 {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.copy-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-}
-
-.copy-actions button {
-  text-align: center;
-  font-size: 11px;
-  padding: 7px 6px;
-}
-
-.field-actions {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.field-actions button:nth-child(3),
-.field-actions button:nth-child(4) {
-  grid-column: 1 / -1;
 }
