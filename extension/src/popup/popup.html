@@ -15,32 +15,32 @@
 
       <section class="controls" aria-label="Extraction controls">
         <button id="extract-button" class="primary-button" type="button">Extract job post</button>
-        <p id="status" class="status" role="status">Open a job post, then extract.</p>
+        <p id="status" class="status" role="status">Extract a job post or enter its details manually.</p>
       </section>
 
-      <section id="preview" class="preview hidden" aria-label="Extracted job preview">
-        <dl>
-          <div>
-            <dt>Title</dt>
-            <dd id="title-value"></dd>
-          </div>
-          <div>
-            <dt>Company</dt>
-            <dd id="company-value"></dd>
-          </div>
-          <div>
-            <dt>Location</dt>
-            <dd id="location-value"></dd>
-          </div>
-          <div>
-            <dt>URL</dt>
-            <dd id="url-value"></dd>
-          </div>
-        </dl>
+      <section id="preview" class="preview" aria-label="Job post details">
+        <div class="field-list">
+          <label class="field-row" for="title-value">
+            <span>Title</span>
+            <input id="title-value" type="text" placeholder="Not found" />
+          </label>
+          <label class="field-row" for="company-value">
+            <span>Company</span>
+            <input id="company-value" type="text" placeholder="Not found" />
+          </label>
+          <label class="field-row" for="location-value">
+            <span>Location</span>
+            <input id="location-value" type="text" placeholder="Not found" />
+          </label>
+          <label class="field-row" for="url-value">
+            <span>URL</span>
+            <input id="url-value" type="url" placeholder="Not found" spellcheck="false" />
+          </label>
+        </div>
 
         <div class="textarea-group">
           <label for="description-value">Description</label>
-          <textarea id="description-value" readonly></textarea>
+          <textarea id="description-value" placeholder="Not found"></textarea>
         </div>
 
         <div class="textarea-group">
@@ -53,28 +53,27 @@
       </section>
 
       <section class="notion-sync" aria-label="Notion sync">
-        <button id="add-to-notion-button" class="notion-button" type="button" disabled>Add to Notion</button>
+        <button id="add-to-notion-button" class="notion-button" type="button">Add to Notion</button>
       </section>
 
       <section class="copy-group" aria-label="Copy individual fields">
         <h2>Copy field</h2>
         <div class="copy-actions field-actions">
-          <button id="copy-title-button" type="button" disabled>Title</button>
-          <button id="copy-company-button" type="button" disabled>Company</button>
-          <button id="copy-location-button" type="button" disabled>Location</button>
-          <button id="copy-description-button" type="button" disabled>Description</button>
-          <button id="copy-notes-button" type="button" disabled>Notes</button>
-          <button id="copy-url-button" type="button" disabled>URL</button>
-          <button id="copy-extracted-at-button" type="button" disabled>Extracted date</button>
+          <button id="copy-title-button" type="button">Title</button>
+          <button id="copy-company-button" type="button">Company</button>
+          <button id="copy-location-button" type="button">Location</button>
+          <button id="copy-description-button" type="button">Description</button>
+          <button id="copy-notes-button" type="button">Notes</button>
+          <button id="copy-url-button" type="button">URL</button>
         </div>
       </section>
 
       <section class="copy-group" aria-label="Copy full export formats">
         <h2>Copy export</h2>
         <div class="copy-actions">
-          <button id="copy-text-button" type="button" disabled>Text</button>
-          <button id="copy-markdown-button" type="button" disabled>Markdown</button>
-          <button id="copy-json-button" type="button" disabled>JSON</button>
+          <button id="copy-text-button" type="button">Text</button>
+          <button id="copy-markdown-button" type="button">Markdown</button>
+          <button id="copy-json-button" type="button">JSON</button>
         </div>
       </section>
     </main>

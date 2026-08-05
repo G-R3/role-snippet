@@ -21,7 +21,6 @@ function extractJobPost(): ExtractJobPostResponse {
     sourceUrl: window.location.href,
     ...extractor.extract(),
     notes: "",
-    extractedAt: new Date().toISOString(),
   };
 
   if (!jobPost.title && !jobPost.company && !jobPost.description) {

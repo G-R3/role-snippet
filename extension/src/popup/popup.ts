@@ -1,5 +1,10 @@
 import type { JobPost, JobPostField } from "../shared/job";
-import { hasMinimumJobPostFields, isJobPost } from "../shared/job";
+import {
+  emptyJobPost,
+  hasMinimumJobPostFields,
+  isJobPost,
+  JOB_POST_FIELDS,
+} from "../shared/job";
 import { isSupportedJobPageUrl } from "../shared/jobSource";
 import {
   EXTRACT_JOB_POST_MESSAGE,
@@ -14,8 +19,12 @@ import {
   formatJobPostAsMarkdown,
   formatJobPostAsPlainText,
 } from "../shared/notionExport";
+import {
+  type JobPostInputElements,
+  readFromInputs,
+  writeToInputs,
+} from "./jobPostForm";
 
-let currentJobPost: JobPost | null = null;
 const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
 const extractButton = getElement<HTMLButtonElement>("extract-button");
@@ -30,22 +39,20 @@ const copyDescriptionButton = getElement<HTMLButtonElement>(
 );
 const copyNotesButton = getElement<HTMLButtonElement>("copy-notes-button");
 const copyUrlButton = getElement<HTMLButtonElement>("copy-url-button");
-const copyExtractedAtButton = getElement<HTMLButtonElement>(
-  "copy-extracted-at-button",
-);
 const copyTextButton = getElement<HTMLButtonElement>("copy-text-button");
 const copyMarkdownButton = getElement<HTMLButtonElement>(
   "copy-markdown-button",
 );
 const copyJsonButton = getElement<HTMLButtonElement>("copy-json-button");
 const statusElement = getElement<HTMLParagraphElement>("status");
-const previewElement = getElement<HTMLElement>("preview");
-const titleElement = getElement<HTMLElement>("title-value");
-const companyElement = getElement<HTMLElement>("company-value");
-const locationElement = getElement<HTMLElement>("location-value");
-const urlElement = getElement<HTMLElement>("url-value");
-const descriptionElement = getElement<HTMLTextAreaElement>("description-value");
-const notesElement = getElement<HTMLTextAreaElement>("notes-value");
+const fieldElements = {
+  sourceUrl: getElement<HTMLInputElement>("url-value"),
+  title: getElement<HTMLInputElement>("title-value"),
+  company: getElement<HTMLInputElement>("company-value"),
+  location: getElement<HTMLInputElement>("location-value"),
+  description: getElement<HTMLTextAreaElement>("description-value"),
+  notes: getElement<HTMLTextAreaElement>("notes-value"),
+} satisfies JobPostInputElements;
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -71,41 +78,11 @@ function setLoading(isLoading: boolean): void {
   extractButton.textContent = isLoading ? "Extracting..." : "Extract job post";
 }
 
-function setCopyButtonsEnabled(isEnabled: boolean): void {
-  addToNotionButton.disabled = !isEnabled;
-  copyTitleButton.disabled = !isEnabled;
-  copyCompanyButton.disabled = !isEnabled;
-  copyLocationButton.disabled = !isEnabled;
-  copyDescriptionButton.disabled = !isEnabled;
-  copyNotesButton.disabled = !isEnabled;
-  copyUrlButton.disabled = !isEnabled;
-  copyExtractedAtButton.disabled = !isEnabled;
-  copyTextButton.disabled = !isEnabled;
-  copyMarkdownButton.disabled = !isEnabled;
-  copyJsonButton.disabled = !isEnabled;
-}
-
 function setNotionSyncLoading(isLoading: boolean): void {
-  addToNotionButton.disabled = isLoading || !currentJobPost;
+  addToNotionButton.disabled = isLoading;
   addToNotionButton.textContent = isLoading
     ? "Adding to Notion..."
     : "Add to Notion";
-}
-
-function renderJobPost(jobPost: JobPost): void {
-  currentJobPost = jobPost;
-  previewElement.classList.remove("hidden");
-
-  titleElement.textContent = jobPost.title || "Not found";
-  titleElement.title = jobPost.title || "";
-  companyElement.textContent = jobPost.company || "Not found";
-  locationElement.textContent = jobPost.location || "Not found";
-  urlElement.textContent = jobPost.sourceUrl;
-  urlElement.title = jobPost.sourceUrl;
-  descriptionElement.value = jobPost.description || "Not found";
-  notesElement.value = jobPost.notes;
-
-  setCopyButtonsEnabled(true);
 }
 
 async function saveJobPost(jobPost: JobPost): Promise<void> {
@@ -122,8 +99,8 @@ async function restoreSavedJobPost(): Promise<void> {
     return;
   }
 
-  renderJobPost(savedJobPost);
-  setStatus("Restored the last extracted job post.", "success");
+  writeToInputs(fieldElements, savedJobPost);
+  setStatus("Restored the saved job post.", "success");
 }
 
 function isJobUrl(url: string | undefined): boolean {
@@ -225,8 +202,14 @@ async function extractFromActiveTab(): Promise<void> {
       return;
     }
 
-    renderJobPost(response.jobPost);
-    await saveJobPost(response.jobPost);
+    writeToInputs(fieldElements, response.jobPost);
+
+    try {
+      await saveJobPost(response.jobPost);
+    } catch {
+      setStatus("Job extracted, but could not save it.", "error");
+      return;
+    }
 
     const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
       ? "Job post extracted."
@@ -244,29 +227,26 @@ async function copyCurrentJobPost(
   formatter: (jobPost: JobPost) => string,
   label: string,
 ): Promise<void> {
-  if (!currentJobPost) {
-    setStatus("Extract a job post before copying.", "error");
-    return;
-  }
-
-  await navigator.clipboard.writeText(formatter(currentJobPost));
+  await navigator.clipboard.writeText(formatter(readFromInputs(fieldElements)));
   setStatus(`${label} copied to clipboard.`, "success");
 }
 
 async function addCurrentJobPostToNotion(): Promise<void> {
-  if (!currentJobPost) {
-    setStatus("Extract a job post before adding it to Notion.", "error");
+  const jobPost = readFromInputs(fieldElements);
+
+  if (!hasMinimumJobPostFields(jobPost)) {
+    setStatus(
+      "Add a title, company, and description before adding to Notion.",
+      "error",
+    );
     return;
   }
-
-  currentJobPost.notes = notesElement.value;
-  await saveJobPost(currentJobPost);
 
   setNotionSyncLoading(true);
   setStatus("Adding job to Notion...");
 
   try {
-    const response = await sendSyncMessage(currentJobPost);
+    const response = await sendSyncMessage(jobPost);
 
     if (!response.ok) {
       setStatus(response.error, "error");
@@ -283,12 +263,7 @@ async function copyCurrentJobPostField(
   field: JobPostField,
   label: string,
 ): Promise<void> {
-  if (!currentJobPost) {
-    setStatus("Extract a job post before copying.", "error");
-    return;
-  }
-
-  const value = currentJobPost[field].trim();
+  const value = readFromInputs(fieldElements)[field].trim();
 
   if (!value) {
     setStatus(`${label} is empty.`, "error");
@@ -299,6 +274,7 @@ async function copyCurrentJobPostField(
   setStatus(`${label} copied to clipboard.`, "success");
 }
 
+writeToInputs(fieldElements, emptyJobPost);
 void restoreSavedJobPost();
 
 extractButton.addEventListener("click", () => {
@@ -333,10 +309,6 @@ copyUrlButton.addEventListener("click", () => {
   void copyCurrentJobPostField("sourceUrl", "URL");
 });
 
-copyExtractedAtButton.addEventListener("click", () => {
-  void copyCurrentJobPostField("extractedAt", "Extracted date");
-});
-
 copyTextButton.addEventListener("click", () => {
   void copyCurrentJobPost(formatJobPostAsPlainText, "Plain text");
 });
@@ -349,11 +321,10 @@ copyJsonButton.addEventListener("click", () => {
   void copyCurrentJobPost(formatJobPostAsJson, "JSON");
 });
 
-notesElement.addEventListener("input", () => {
-  if (!currentJobPost) {
-    return;
-  }
-
-  currentJobPost.notes = notesElement.value;
-  void saveJobPost(currentJobPost);
-});
+for (const field of JOB_POST_FIELDS) {
+  fieldElements[field].addEventListener("input", () => {
+    void saveJobPost(readFromInputs(fieldElements)).catch(() => {
+      setStatus("Could not save changes.", "error");
+    });
+  });
+}

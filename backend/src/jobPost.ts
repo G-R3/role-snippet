@@ -5,7 +5,6 @@ export const JOB_POST_FIELDS = [
   "location",
   "description",
   "notes",
-  "extractedAt",
 ] as const;
 
 export type JobPostField = (typeof JOB_POST_FIELDS)[number];

@@ -11,7 +11,6 @@ describe("buildNotionJobProperties", () => {
       location: "New York, NY",
       description: "Build software.",
       notes: "",
-      extractedAt: "2026-08-03T00:00:00.000Z",
     };
 
     const properties = buildNotionJobProperties(jobPost, "status");

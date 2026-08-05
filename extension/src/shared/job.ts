@@ -1,6 +1,6 @@
 import type { JobPost, JobPostField } from "../../../backend/src/jobPost";
 
-export { isJobPost } from "../../../backend/src/jobPost";
+export { isJobPost, JOB_POST_FIELDS } from "../../../backend/src/jobPost";
 export type { JobPost, JobPostField };
 
 export const emptyJobPost: JobPost = {
@@ -10,7 +10,6 @@ export const emptyJobPost: JobPost = {
   location: "",
   description: "",
   notes: "",
-  extractedAt: "",
 };
 
 export function hasMinimumJobPostFields(jobPost: JobPost): boolean {
