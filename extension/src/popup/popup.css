@@ -7,23 +7,35 @@
 }
 
 :root {
-  --background: #000;
-  --surface: #0b0b0b;
-  --border: #292929;
-  --border-strong: #3c3c3c;
-  --text: #f4f4f4;
-  --muted: #898989;
-  --subtle: #5e5e5e;
-  --focus: #aebcff;
-  --warning: #f1b849;
-  --warning-border: #805d1d;
-  --warning-background: #171005;
-  --success: #74d99b;
-  --success-border: #214d32;
-  --success-background: #07180d;
-  --error: #ffaaa5;
-  --error-border: #62231f;
-  --error-background: #220a09;
+  /* Neutral surfaces and content */
+  --color-canvas: oklch(0% 0 0);
+  --color-surface: oklch(15% 0 0);
+  --color-surface-disabled: oklch(20.5% 0 0);
+  --color-border: oklch(28.1% 0 0);
+  --color-border-strong: oklch(35.6% 0 0);
+  --color-text-primary: oklch(96.7% 0 0);
+  --color-text-secondary: oklch(73.8% 0 0);
+  --color-text-muted: oklch(63% 0 0);
+  --color-text-subtle: oklch(48.2% 0 0);
+  --color-control-primary-hover: oklch(87.9% 0 0);
+  --color-input-ring: oklch(96.7% 0 0 / 10%);
+  --color-input-ring-hover: oklch(96.7% 0 0 / 16%);
+
+  /* Interaction */
+  --color-focus: oklch(80.9% 0.096 274.9);
+
+  /* Status tones share the same foreground, border, and surface roles. */
+  --color-warning-foreground: oklch(81.5% 0.141 80.9);
+  --color-warning-border: oklch(50.3% 0.091 78.6);
+  --color-warning-ring: oklch(30% 0.05 79.7);
+  --color-warning-ring-hover: oklch(35% 0.06 79.7);
+  --color-warning-surface: oklch(17.9% 0.025 79.7);
+  --color-success-foreground: oklch(80.8% 0.131 155.1);
+  --color-success-border: oklch(38.1% 0.068 154.5);
+  --color-success-surface: oklch(19% 0.032 154.1);
+  --color-error-foreground: oklch(82% 0.101 23.2);
+  --color-error-border: oklch(35% 0.093 26.6);
+  --color-error-surface: oklch(18.4% 0.042 24.5);
 
   color-scheme: dark;
   font-family: "Berkeley Mono", ui-monospace, monospace;
@@ -44,8 +56,8 @@ body {
 body {
   margin: 0;
   overflow: hidden;
-  color: var(--text);
-  background: var(--background);
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
 }
 
 button,
@@ -70,7 +82,7 @@ textarea {
 .popup-shell {
   max-height: 600px;
   overflow-y: auto;
-  scrollbar-color: #333 transparent;
+  scrollbar-color: var(--color-border-strong) transparent;
   scrollbar-width: thin;
 }
 
@@ -84,8 +96,8 @@ textarea {
   min-height: 62px;
   gap: 14px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgb(0 0 0 / 96%);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-canvas);
 }
 
 .identity {
@@ -101,7 +113,7 @@ textarea {
   height: 28px;
   place-items: center;
   flex: 0 0 auto;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
   font-size: 10px;
 }
@@ -112,22 +124,18 @@ textarea {
   white-space: nowrap;
 }
 
-.identity-name {
-  font-size: 12px;
-}
-
 .identity-context {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 9px;
 }
 
 .notion-button {
   min-width: 108px;
-  border: 1px solid var(--text);
+  border: 1px solid var(--color-text-primary);
   border-radius: 5px;
   padding: 8px 10px;
-  color: var(--background);
-  background: var(--text);
+  color: var(--color-canvas);
+  background: var(--color-text-primary);
   cursor: pointer;
   font-size: 11px;
   font-weight: 700;
@@ -135,26 +143,26 @@ textarea {
 }
 
 .notion-button:hover:not(:disabled) {
-  border-color: #d7d7d7;
-  background: #d7d7d7;
+  border-color: var(--color-control-primary-hover);
+  background: var(--color-control-primary-hover);
 }
 
 .notion-button:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .notion-button:disabled {
-  border-color: #303030;
-  color: #666;
-  background: #171717;
+  border-color: var(--color-border);
+  color: var(--color-text-subtle);
+  background: var(--color-surface-disabled);
   cursor: not-allowed;
 }
 
 .notion-button.added {
-  border-color: var(--success-border);
-  color: var(--success);
-  background: #12321e;
+  border-color: var(--color-success-border);
+  color: var(--color-success-foreground);
+  background: var(--color-success-surface);
 }
 
 .feedback {
@@ -163,9 +171,9 @@ textarea {
   height: 38px;
   gap: 8px;
   padding: 8px 14px;
-  border-bottom: 1px solid var(--border);
-  color: #aaa;
-  background: #090909;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
   font-size: 10.5px;
 }
 
@@ -184,21 +192,21 @@ textarea {
 }
 
 .feedback.warning {
-  border-color: #4e3710;
-  color: #f5ca70;
-  background: #211807;
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-foreground);
+  background: var(--color-warning-surface);
 }
 
 .feedback.success {
-  border-color: var(--success-border);
-  color: var(--success);
-  background: var(--success-background);
+  border-color: var(--color-success-border);
+  color: var(--color-success-foreground);
+  background: var(--color-success-surface);
 }
 
 .feedback.error {
-  border-color: var(--error-border);
-  color: var(--error);
-  background: var(--error-background);
+  border-color: var(--color-error-border);
+  color: var(--color-error-foreground);
+  background: var(--color-error-surface);
 }
 
 .review {
@@ -220,7 +228,7 @@ h1 {
 }
 
 .review-heading > span {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 9px;
 }
 
@@ -231,7 +239,6 @@ h1 {
 }
 
 .field {
-  position: relative;
   display: grid;
   min-width: 0;
   gap: 5px;
@@ -249,14 +256,14 @@ h1 {
 }
 
 label {
-  color: #929292;
+  color: var(--color-text-muted);
   font-size: 9.5px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .field-label-row label span {
-  color: var(--subtle);
+  color: var(--color-text-subtle);
   font-size: 8.5px;
   letter-spacing: 0;
   text-transform: lowercase;
@@ -266,7 +273,7 @@ label {
   display: none;
   width: 14px;
   height: 14px;
-  color: var(--warning);
+  color: var(--color-warning-foreground);
 }
 
 .warning-icon svg,
@@ -283,16 +290,19 @@ input,
 textarea {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 5px;
   outline: none;
   padding: 8px 30px 8px 9px;
-  color: #e8e8e8;
-  background: var(--surface);
-  font-size: 11px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px var(--color-border),
+    0 0 0 4px var(--color-input-ring);
+  font-size: 12px;
   transition:
-    border-color 100ms,
-    background 100ms;
+    background 150ms,
+    box-shadow 150ms;
 }
 
 textarea {
@@ -307,22 +317,25 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: #545454;
+  color: var(--color-text-subtle);
 }
 
 .secondary-input {
-  color: #858585;
+  color: var(--color-text-muted);
 }
 
 input:hover,
 textarea:hover {
-  border-color: var(--border-strong);
+  box-shadow:
+    0 0 0 1px var(--color-border-strong),
+    0 0 0 4px var(--color-input-ring-hover);
 }
 
-input:focus-visible,
-textarea:focus-visible {
-  border-color: var(--focus);
-  box-shadow: 0 0 0 2px #344069;
+input:focus,
+textarea:focus {
+  box-shadow:
+    0 0 0 1px var(--color-border),
+    0 0 0 4px var(--color-input-ring);
 }
 
 .edit-icon {
@@ -331,7 +344,7 @@ textarea:focus-visible {
   right: 9px;
   width: 14px;
   height: 14px;
-  color: #686868;
+  color: var(--color-text-subtle);
   opacity: 0;
   pointer-events: none;
   transform: translateY(-50%);
@@ -349,7 +362,7 @@ textarea:focus-visible {
 }
 
 .input-shell:focus-within .edit-icon {
-  color: var(--focus);
+  color: var(--color-focus);
   opacity: 0.55;
 }
 
@@ -359,6 +372,22 @@ textarea:focus-visible {
 
 .field.invalid input,
 .field.invalid textarea {
-  border-color: var(--warning-border);
-  background: var(--warning-background);
+  background: var(--color-warning-surface);
+  box-shadow:
+    0 0 0 1px var(--color-warning-border),
+    0 0 0 4px var(--color-warning-ring);
+}
+
+.field.invalid input:hover,
+.field.invalid textarea:hover {
+  box-shadow:
+    0 0 0 1px var(--color-warning-border),
+    0 0 0 4px var(--color-warning-ring-hover);
+}
+
+.field.invalid input:focus,
+.field.invalid textarea:focus {
+  box-shadow:
+    0 0 0 1px var(--color-warning-border),
+    0 0 0 4px var(--color-warning-ring);
 }
