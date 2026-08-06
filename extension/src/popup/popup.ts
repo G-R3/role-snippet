@@ -69,7 +69,8 @@ function setStatus(message: string, tone: StatusTone = "neutral"): void {
   statusTone = tone;
   statusElement.textContent = message;
   feedbackIcon.textContent = STATUS_ICONS[tone];
-  feedbackElement.className = `feedback ${tone}`;
+  feedbackElement.className =
+    tone === "neutral" ? "feedback" : `feedback ${tone}`;
   feedbackElement.setAttribute("role", tone === "error" ? "alert" : "status");
   feedbackElement.setAttribute(
     "aria-live",
