@@ -7,52 +7,100 @@
     <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="warning-icon" viewBox="0 0 16 16">
+        <path d="M7.15 2.4a1 1 0 0 1 1.7 0l5.55 9.5a1 1 0 0 1-.85 1.5H2.45a1 1 0 0 1-.85-1.5l5.55-9.5Z" fill="none" stroke="currentColor" />
+        <path d="M8 5.6v3.6M8 11.4h.01" stroke="currentColor" stroke-linecap="round" />
+      </symbol>
+      <symbol id="edit-icon" viewBox="0 0 16 16">
+        <path d="m10.9 2.2 2.9 2.9-8.2 8.2-3.5.6.6-3.5 8.2-8.2Z" fill="none" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+    </svg>
+
     <main class="popup-shell">
       <header class="header">
-        <p class="eyebrow">Jobs → Notion</p>
-        <h1>Role Snippet</h1>
+        <div class="identity" aria-label="Role Snippet, job to Notion">
+          <span class="identity-mark" aria-hidden="true">RS</span>
+          <span>
+            <span class="identity-name">Role Snippet</span>
+            <span class="identity-context">Job to Notion</span>
+          </span>
+        </div>
+        <button id="add-to-notion-button" class="notion-button" type="button" disabled>Extracting…</button>
       </header>
 
-      <section class="controls" aria-label="Job status">
-        <p id="status" class="status" role="status">Looking for job details...</p>
+      <section id="feedback" class="feedback neutral" role="status" aria-live="polite">
+        <span id="feedback-icon" class="feedback-icon" aria-hidden="true">·</span>
+        <p id="status">Looking for job details…</p>
       </section>
 
-      <section id="preview" class="preview" aria-label="Job post details">
-        <div class="field-list">
-          <label class="field-row" for="title-value">
-            <span>Title</span>
-            <input id="title-value" type="text" placeholder="Not found" />
-          </label>
-          <label class="field-row" for="company-value">
-            <span>Company</span>
-            <input id="company-value" type="text" placeholder="Not found" />
-          </label>
-          <label class="field-row" for="location-value">
-            <span>Location</span>
-            <input id="location-value" type="text" placeholder="Not found" />
-          </label>
-          <label class="field-row" for="url-value">
-            <span>URL</span>
-            <input id="url-value" type="url" placeholder="Not found" spellcheck="false" />
-          </label>
+      <section class="review" aria-label="Job post details">
+        <div class="review-heading">
+          <h1>Review details</h1>
+          <span>All fields editable</span>
         </div>
 
-        <div class="textarea-group">
-          <label for="description-value">Description</label>
-          <textarea id="description-value" placeholder="Not found"></textarea>
+        <div class="compact-fields">
+          <div id="title-field" class="field field-wide">
+            <div class="field-label-row">
+              <label for="title-value">Title</label>
+              <span class="warning-icon" role="img" aria-label="Title is required"><svg aria-hidden="true"><use href="#warning-icon" /></svg></span>
+            </div>
+            <div class="input-shell">
+              <input id="title-value" type="text" placeholder="Not found" required />
+              <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+            </div>
+            <span id="title-warning" class="visually-hidden" hidden>Title is required.</span>
+          </div>
+
+          <div id="company-field" class="field">
+            <div class="field-label-row">
+              <label for="company-value">Company</label>
+              <span class="warning-icon" role="img" aria-label="Company is required"><svg aria-hidden="true"><use href="#warning-icon" /></svg></span>
+            </div>
+            <div class="input-shell">
+              <input id="company-value" type="text" placeholder="Not found" required />
+              <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+            </div>
+            <span id="company-warning" class="visually-hidden" hidden>Company is required.</span>
+          </div>
+
+          <div class="field">
+            <div class="field-label-row"><label for="location-value">Location</label></div>
+            <div class="input-shell">
+              <input id="location-value" type="text" placeholder="Not found" />
+              <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+            </div>
+          </div>
         </div>
 
-        <div class="textarea-group">
-          <label for="notes-value">Notes</label>
-          <textarea
-            id="notes-value"
-            placeholder="Optional notes, dashboard links, follow-up details..."
-          ></textarea>
+        <div id="description-field" class="field">
+          <div class="field-label-row">
+            <label for="description-value">Description</label>
+            <span class="warning-icon" role="img" aria-label="Description is required"><svg aria-hidden="true"><use href="#warning-icon" /></svg></span>
+          </div>
+          <div class="input-shell textarea-shell">
+            <textarea id="description-value" placeholder="Not found" required></textarea>
+            <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+          </div>
+          <span id="description-warning" class="visually-hidden" hidden>Description is required.</span>
         </div>
-      </section>
 
-      <section class="notion-sync" aria-label="Notion sync">
-        <button id="add-to-notion-button" class="notion-button" type="button" disabled>Add to Notion</button>
+        <div class="field">
+          <div class="field-label-row"><label for="url-value">URL</label></div>
+          <div class="input-shell">
+            <input id="url-value" class="secondary-input" type="url" placeholder="Not found" spellcheck="false" />
+            <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row"><label for="notes-value">Notes <span>optional</span></label></div>
+          <div class="input-shell textarea-shell notes-shell">
+            <textarea id="notes-value" placeholder="Add a reminder or follow-up…"></textarea>
+            <svg class="edit-icon" aria-hidden="true"><use href="#edit-icon" /></svg>
+          </div>
+        </div>
       </section>
     </main>
 
