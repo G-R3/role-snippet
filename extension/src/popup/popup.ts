@@ -1,9 +1,11 @@
 import type { JobPost } from "../shared/job";
 import {
   emptyJobPost,
+  getMissingRequiredJobPostFields,
   hasMinimumJobPostFields,
   isJobPost,
   JOB_POST_FIELDS,
+  REQUIRED_JOB_POST_FIELDS,
 } from "../shared/job";
 import {
   EXTRACT_JOB_POST_MESSAGE,
@@ -23,6 +25,8 @@ import { initializePopup } from "./popupInitialization";
 const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
+const feedbackElement = getElement<HTMLElement>("feedback");
+const feedbackIcon = getElement<HTMLElement>("feedback-icon");
 const statusElement = getElement<HTMLParagraphElement>("status");
 const fieldElements = {
   sourceUrl: getElement<HTMLInputElement>("url-value"),
@@ -32,6 +36,24 @@ const fieldElements = {
   description: getElement<HTMLTextAreaElement>("description-value"),
   notes: getElement<HTMLTextAreaElement>("notes-value"),
 } satisfies JobPostInputElements;
+const requiredFieldElements = REQUIRED_JOB_POST_FIELDS.map((field) => ({
+  field,
+  container: getElement<HTMLElement>(`${field}-field`),
+  warning: getElement<HTMLElement>(`${field}-warning`),
+}));
+
+type ActionState = "initializing" | "idle" | "adding" | "added";
+type StatusTone = "neutral" | "warning" | "success" | "error";
+
+const STATUS_ICONS = {
+  neutral: "·",
+  warning: "⚠",
+  success: "✓",
+  error: "!",
+} satisfies Record<StatusTone, string>;
+
+let actionState: ActionState = "initializing";
+let statusTone: StatusTone = "neutral";
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -43,20 +65,69 @@ function getElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function setStatus(
-  message: string,
-  tone: "neutral" | "success" | "error" = "neutral",
-): void {
+function setStatus(message: string, tone: StatusTone = "neutral"): void {
+  statusTone = tone;
   statusElement.textContent = message;
-  statusElement.classList.toggle("success", tone === "success");
-  statusElement.classList.toggle("error", tone === "error");
+  feedbackIcon.textContent = STATUS_ICONS[tone];
+  feedbackElement.className = `feedback ${tone}`;
+  feedbackElement.setAttribute("role", tone === "error" ? "alert" : "status");
+  feedbackElement.setAttribute(
+    "aria-live",
+    tone === "error" ? "assertive" : "polite",
+  );
 }
 
-function setNotionSyncLoading(isLoading: boolean): void {
-  addToNotionButton.disabled = isLoading;
-  addToNotionButton.textContent = isLoading
-    ? "Adding to Notion..."
-    : "Add to Notion";
+function renderFormState(): void {
+  const missingFields = new Set(
+    getMissingRequiredJobPostFields(readFromInputs(fieldElements)),
+  );
+
+  for (const { field, container, warning } of requiredFieldElements) {
+    const showWarning =
+      actionState !== "initializing" && missingFields.has(field);
+    const input = fieldElements[field];
+    container.classList.toggle("invalid", showWarning);
+    warning.hidden = !showWarning;
+    input.setAttribute("aria-invalid", String(showWarning));
+
+    if (showWarning) {
+      input.setAttribute("aria-describedby", `${field}-warning`);
+    } else {
+      input.removeAttribute("aria-describedby");
+    }
+  }
+
+  addToNotionButton.textContent =
+    actionState === "initializing"
+      ? "Extracting…"
+      : actionState === "adding"
+        ? "Adding…"
+        : actionState === "added"
+          ? "✓ Added"
+          : "Add to Notion";
+  addToNotionButton.disabled = actionState !== "idle" || missingFields.size > 0;
+  addToNotionButton.classList.toggle("added", actionState === "added");
+}
+
+function showValidationStatus(): void {
+  const missingCount = getMissingRequiredJobPostFields(
+    readFromInputs(fieldElements),
+  ).length;
+
+  if (missingCount > 0) {
+    setStatus(
+      `Review ${missingCount} required ${missingCount === 1 ? "field" : "fields"} before adding.`,
+      "warning",
+    );
+    return;
+  }
+
+  setStatus("Ready to add", "success");
+}
+
+function setActionState(state: ActionState): void {
+  actionState = state;
+  renderFormState();
 }
 
 async function saveJobPost(jobPost: JobPost): Promise<void> {
@@ -173,34 +244,40 @@ async function extractFromTab(tabId: number): Promise<void> {
 }
 
 async function addCurrentJobPostToNotion(): Promise<void> {
-  const jobPost = readFromInputs(fieldElements);
-
-  if (!hasMinimumJobPostFields(jobPost)) {
-    setStatus(
-      "Add a title, company, and description before adding to Notion.",
-      "error",
-    );
+  if (actionState !== "idle") {
     return;
   }
 
-  setNotionSyncLoading(true);
-  setStatus("Adding job to Notion...");
+  const jobPost = readFromInputs(fieldElements);
+
+  if (!hasMinimumJobPostFields(jobPost)) {
+    renderFormState();
+    showValidationStatus();
+    return;
+  }
+
+  setActionState("adding");
+  setStatus("Adding job to Notion…");
 
   try {
     const response = await sendSyncMessage(jobPost);
 
     if (!response.ok) {
+      setActionState("idle");
       setStatus(response.error, "error");
       return;
     }
 
-    setStatus("Added job to Notion.", "success");
-  } finally {
-    setNotionSyncLoading(false);
+    setActionState("added");
+    setStatus("Job added to Notion.", "success");
+  } catch {
+    setActionState("idle");
+    setStatus("Could not add the job to Notion. Try again.", "error");
   }
 }
 
 writeToInputs(fieldElements, emptyJobPost);
+renderFormState();
 
 addToNotionButton.addEventListener("click", () => {
   void addCurrentJobPostToNotion();
@@ -208,6 +285,12 @@ addToNotionButton.addEventListener("click", () => {
 
 for (const field of JOB_POST_FIELDS) {
   fieldElements[field].addEventListener("input", () => {
+    renderFormState();
+
+    if (actionState === "idle") {
+      showValidationStatus();
+    }
+
     void saveJobPost(readFromInputs(fieldElements)).catch(() => {
       setStatus("Could not save changes.", "error");
     });
@@ -220,6 +303,10 @@ void initializePopup({
   extractFromTab,
   setStatus,
   setSyncDisabled(disabled) {
-    addToNotionButton.disabled = disabled;
+    setActionState(disabled ? "initializing" : "idle");
+
+    if (!disabled && statusTone !== "error") {
+      showValidationStatus();
+    }
   },
 });
