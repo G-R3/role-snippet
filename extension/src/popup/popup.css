@@ -320,10 +320,6 @@ textarea::placeholder {
   color: var(--color-text-subtle);
 }
 
-.secondary-input {
-  color: var(--color-text-muted);
-}
-
 input:hover,
 textarea:hover {
   box-shadow:
