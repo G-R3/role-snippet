@@ -28,6 +28,7 @@ const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const feedbackElement = getElement<HTMLElement>("feedback");
 const feedbackIcon = getElement<HTMLElement>("feedback-icon");
 const statusElement = getElement<HTMLParagraphElement>("status");
+const reextractButton = getElement<HTMLButtonElement>("reextract-button");
 const fieldElements = {
   sourceUrl: getElement<HTMLInputElement>("url-value"),
   title: getElement<HTMLInputElement>("title-value"),
@@ -42,7 +43,7 @@ const requiredFieldElements = REQUIRED_JOB_POST_FIELDS.map((field) => ({
   warning: getElement<HTMLElement>(`${field}-warning`),
 }));
 
-type ActionState = "initializing" | "idle" | "adding" | "added";
+type ActionState = "initializing" | "extracting" | "idle" | "adding" | "added";
 type StatusTone = "neutral" | "warning" | "success" | "error";
 
 const STATUS_ICONS = {
@@ -99,7 +100,7 @@ function renderFormState(): void {
   }
 
   addToNotionButton.textContent =
-    actionState === "initializing"
+    actionState === "initializing" || actionState === "extracting"
       ? "Extracting…"
       : actionState === "adding"
         ? "Adding…"
@@ -108,6 +109,12 @@ function renderFormState(): void {
           : "Add to Notion";
   addToNotionButton.disabled = actionState !== "idle" || missingFields.size > 0;
   addToNotionButton.classList.toggle("added", actionState === "added");
+  reextractButton.textContent =
+    actionState === "extracting" ? "Extracting…" : "Extract again";
+  reextractButton.disabled =
+    actionState === "initializing" ||
+    actionState === "extracting" ||
+    actionState === "adding";
 }
 
 function showValidationStatus(): void {
@@ -277,11 +284,42 @@ async function addCurrentJobPostToNotion(): Promise<void> {
   }
 }
 
+async function reextractCurrentTab(): Promise<void> {
+  if (
+    actionState === "initializing" ||
+    actionState === "extracting" ||
+    actionState === "adding"
+  ) {
+    return;
+  }
+
+  setActionState("extracting");
+
+  try {
+    const tab = await getActiveTab();
+
+    if (!tab?.id) {
+      setStatus("Could not find the active tab.", "error");
+      return;
+    }
+
+    await extractFromTab(tab.id);
+  } catch {
+    setStatus("Could not extract job details. Try again.", "error");
+  } finally {
+    setActionState("idle");
+  }
+}
+
 writeToInputs(fieldElements, emptyJobPost);
 renderFormState();
 
 addToNotionButton.addEventListener("click", () => {
   void addCurrentJobPostToNotion();
+});
+
+reextractButton.addEventListener("click", () => {
+  void reextractCurrentTab();
 });
 
 for (const field of JOB_POST_FIELDS) {
