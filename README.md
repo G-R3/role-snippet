@@ -1,6 +1,6 @@
 # Role Snippet
 
-Chrome extension for saving job post details from THAT website that shall not be name to my Notion db. The struggle is real, but so is the speed.
+Chrome extension for saving job post details from THAT website that shall not be named to my Notion db. The struggle is real, but so is the speed.
 
 ## Setup
 
