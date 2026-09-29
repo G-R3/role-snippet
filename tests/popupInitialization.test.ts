@@ -23,6 +23,7 @@ type HarnessOptions = {
 function createHarness(options: HarnessOptions = {}) {
   const events: string[] = [];
   const extractedTabIds: number[] = [];
+  const capturedUrls: Array<{ url: string; preserveDetails: boolean }> = [];
   const statuses: Array<{ message: string; tone?: string }> = [];
   const dependencies: PopupInitializationDependencies = {
     async restoreSavedJobPost() {
@@ -32,6 +33,10 @@ function createHarness(options: HarnessOptions = {}) {
     async getActiveTab() {
       events.push("active-tab");
       return options.activeTab ?? null;
+    },
+    setCurrentUrl(url, preserveDetails) {
+      events.push("capture-url");
+      capturedUrls.push({ url, preserveDetails });
     },
     async extractFromTab(tabId) {
       events.push("extract");
@@ -45,7 +50,7 @@ function createHarness(options: HarnessOptions = {}) {
     },
   };
 
-  return { dependencies, events, extractedTabIds, statuses };
+  return { dependencies, events, extractedTabIds, capturedUrls, statuses };
 }
 
 describe("popup initialization", () => {
@@ -65,6 +70,7 @@ describe("popup initialization", () => {
       "sync-disabled",
       "restore",
       "active-tab",
+      "capture-url",
       "extract",
       "sync-enabled",
     ]);
@@ -82,6 +88,12 @@ describe("popup initialization", () => {
     await initializePopup(harness.dependencies);
 
     expect(harness.extractedTabIds).toEqual([]);
+    expect(harness.capturedUrls).toEqual([
+      {
+        url: "https://www.linkedin.com/jobs/collections/top-applicant/?currentJobId=1234567890",
+        preserveDetails: true,
+      },
+    ]);
     expect(harness.statuses.at(-1)).toEqual({
       message: "Restored saved edits for this job.",
       tone: "success",
@@ -89,7 +101,7 @@ describe("popup initialization", () => {
     expect(harness.events.at(-1)).toBe("sync-enabled");
   });
 
-  test("shows the saved draft on an unsupported page", async () => {
+  test("captures only the URL on an unsupported page", async () => {
     const harness = createHarness({
       savedJobPost,
       activeTab: { id: 42, url: "https://example.com" },
@@ -98,9 +110,9 @@ describe("popup initialization", () => {
     await initializePopup(harness.dependencies);
 
     expect(harness.extractedTabIds).toEqual([]);
-    expect(harness.statuses.at(-1)?.message).toBe(
-      "Showing the last saved job.",
-    );
+    expect(harness.capturedUrls).toEqual([
+      { url: "https://example.com", preserveDetails: false },
+    ]);
   });
 
   test("leaves an empty popup ready for manual entry without a saved draft", async () => {
@@ -111,9 +123,9 @@ describe("popup initialization", () => {
     await initializePopup(harness.dependencies);
 
     expect(harness.extractedTabIds).toEqual([]);
-    expect(harness.statuses.at(-1)?.message).toBe(
-      "Open a supported job post or enter its details manually.",
-    );
+    expect(harness.capturedUrls).toEqual([
+      { url: "https://example.com", preserveDetails: false },
+    ]);
     expect(harness.events.at(-1)).toBe("sync-enabled");
   });
 
@@ -131,6 +143,12 @@ describe("popup initialization", () => {
     await expect(initializePopup(harness.dependencies)).rejects.toThrow(
       "Extraction failed",
     );
+    expect(harness.capturedUrls).toEqual([
+      {
+        url: "https://www.workatastartup.com/jobs/12345",
+        preserveDetails: false,
+      },
+    ]);
     expect(harness.events.at(-1)).toBe("sync-enabled");
   });
 });

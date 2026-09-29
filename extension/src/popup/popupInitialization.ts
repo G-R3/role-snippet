@@ -11,6 +11,7 @@ type StatusTone = "neutral" | "success" | "error";
 export type PopupInitializationDependencies = {
   restoreSavedJobPost: () => Promise<JobPost | null>;
   getActiveTab: () => Promise<ActiveTab | null>;
+  setCurrentUrl: (url: string, preserveDetails: boolean) => void;
   extractFromTab: (tabId: number) => Promise<void>;
   setStatus: (message: string, tone?: StatusTone) => void;
   setSyncDisabled: (disabled: boolean) => void;
@@ -28,10 +29,11 @@ function getJobIdentity(url: string | undefined): string | null {
   }
 }
 
-// Restores the draft first, then extracts only when the active tab is a new job.
+// Captures the active URL before attempting job detail extraction.
 export async function initializePopup({
   restoreSavedJobPost,
   getActiveTab,
+  setCurrentUrl,
   extractFromTab,
   setStatus,
   setSyncDisabled,
@@ -48,18 +50,27 @@ export async function initializePopup({
     }
 
     const tab = await getActiveTab();
-    const activeJobIdentity = getJobIdentity(tab?.url);
-
-    if (!tab?.id || !activeJobIdentity) {
+    if (!tab?.url) {
       setStatus(
         savedJobPost
           ? "Showing the last saved job."
-          : "Open a supported job post or enter its details manually.",
+          : "Open a job post or enter its details manually.",
       );
       return;
     }
 
-    if (activeJobIdentity === getJobIdentity(savedJobPost?.sourceUrl)) {
+    const activeJobIdentity = getJobIdentity(tab.url);
+    const isSavedJob = Boolean(
+      activeJobIdentity &&
+        activeJobIdentity === getJobIdentity(savedJobPost?.sourceUrl),
+    );
+    setCurrentUrl(tab.url, isSavedJob);
+
+    if (!activeJobIdentity || !tab.id) {
+      return;
+    }
+
+    if (isSavedJob) {
       setStatus("Restored saved edits for this job.", "success");
       return;
     }

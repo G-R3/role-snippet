@@ -161,6 +161,13 @@ async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
   return tab ?? null;
 }
 
+function setCurrentUrl(url: string, preserveDetails: boolean): void {
+  writeToInputs(fieldElements, {
+    ...(preserveDetails ? readFromInputs(fieldElements) : emptyJobPost),
+    sourceUrl: url,
+  });
+}
+
 function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
   const request: ExtractJobPostRequest = {
     type: EXTRACT_JOB_POST_MESSAGE,
@@ -339,6 +346,7 @@ for (const field of JOB_POST_FIELDS) {
 void initializePopup({
   restoreSavedJobPost,
   getActiveTab,
+  setCurrentUrl,
   extractFromTab,
   setStatus,
   setSyncDisabled(disabled) {
