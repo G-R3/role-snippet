@@ -94,10 +94,7 @@ describe("popup initialization", () => {
         preserveDetails: true,
       },
     ]);
-    expect(harness.statuses.at(-1)).toEqual({
-      message: "Restored saved edits for this job.",
-      tone: "success",
-    });
+    expect(harness.statuses).toEqual([]);
     expect(harness.events.at(-1)).toBe("sync-enabled");
   });
 

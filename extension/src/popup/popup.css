@@ -3,44 +3,59 @@
   src: url("./fonts/BerkeleyMono-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
 }
 
 :root {
-  /* Neutral surfaces and content */
-  --color-canvas: oklch(0% 0 0);
-  --color-surface: oklch(15% 0 0);
-  --color-surface-disabled: oklch(20.5% 0 0);
-  --color-border: oklch(28.1% 0 0);
-  --color-border-strong: oklch(35.6% 0 0);
-  --color-text-primary: oklch(96.7% 0 0);
-  --color-text-secondary: oklch(73.8% 0 0);
-  --color-text-muted: oklch(63% 0 0);
-  --color-text-subtle: oklch(48.2% 0 0);
-  --color-control-primary-hover: oklch(87.9% 0 0);
-  --color-input-ring: oklch(96.7% 0 0 / 10%);
-  --color-input-ring-hover: oklch(96.7% 0 0 / 16%);
+  /* Warm neutral ramp (hue 90). Contrast on --color-bg: primary 16.8:1,
+     secondary 5.8:1, accent 5.6:1, warning 5.5:1. */
+  --color-bg: oklch(99% 0.002 90);
+  --color-bg-hover: oklch(96.5% 0.003 90);
+  --color-bg-sunken: oklch(94.5% 0.003 90);
+  --color-border-default: oklch(88% 0.004 90);
+  --color-border-focus: oklch(60% 0.005 90);
+  --color-text-primary: oklch(22% 0.005 90);
+  --color-text-secondary: oklch(50% 0.006 90);
+  --color-text-tertiary: oklch(66% 0.005 90);
+  /* One accent, one meaning: filed in Notion. */
+  --color-accent: oklch(50% 0.1 145);
+  --color-warning-text: oklch(52% 0.11 70);
+  --color-error-text: oklch(52% 0.16 27);
 
-  /* Interaction */
-  --color-focus: oklch(80.9% 0.096 274.9);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Berkeley Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --text-meta: 12px;
+  --leading-meta: 16px;
+  --text-body: 13px;
+  --leading-body: 20px;
+  --text-title: 15px;
 
-  /* Status tones share the same foreground, border, and surface roles. */
-  --color-warning-foreground: oklch(81.5% 0.141 80.9);
-  --color-warning-border: oklch(50.3% 0.091 78.6);
-  --color-warning-ring: oklch(30% 0.05 79.7);
-  --color-warning-ring-hover: oklch(35% 0.06 79.7);
-  --color-warning-surface: oklch(17.9% 0.025 79.7);
-  --color-success-foreground: oklch(80.8% 0.131 155.1);
-  --color-success-border: oklch(38.1% 0.068 154.5);
-  --color-success-surface: oklch(19% 0.032 154.1);
-  --color-error-foreground: oklch(82% 0.101 23.2);
-  --color-error-border: oklch(35% 0.093 26.6);
-  --color-error-surface: oklch(18.4% 0.042 24.5);
+  --radius-row: 6px;
 
-  color-scheme: dark;
-  font-family: "Berkeley Mono", ui-monospace, monospace;
-  font-size: 12px;
-  line-height: 1.45;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-press: 150ms;
+
+  color-scheme: light dark;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: oklch(18% 0.004 90);
+    --color-bg-hover: oklch(21.5% 0.004 90);
+    --color-bg-sunken: oklch(24.5% 0.004 90);
+    --color-border-default: oklch(32% 0.004 90);
+    --color-border-focus: oklch(58% 0.005 90);
+    --color-text-primary: oklch(95% 0.003 90);
+    --color-text-secondary: oklch(72% 0.006 90);
+    --color-text-tertiary: oklch(50% 0.005 90);
+    --color-accent: oklch(78% 0.1 145);
+    --color-warning-text: oklch(80% 0.11 75);
+    --color-error-text: oklch(74% 0.13 27);
+  }
 }
 
 * {
@@ -49,370 +64,660 @@
 
 html,
 body {
-  width: 380px;
-  max-width: 380px;
+  width: 384px;
+  margin: 0;
 }
 
 body {
-  margin: 0;
-  overflow: hidden;
   color: var(--color-text-primary);
-  background: var(--color-canvas);
+  background: var(--color-bg);
 }
 
 button,
 input,
 textarea {
   font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
 }
 
-.icon-sprite,
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
-  border: 0;
 }
 
-.popup-shell {
+/* Layout: the header carries the action, nearest the toolbar icon that
+   opened the popup. The ledger scrolls beneath it. */
+
+.popup {
+  display: flex;
+  flex-direction: column;
   max-height: 600px;
-  overflow-y: auto;
-  scrollbar-color: var(--color-border-strong) transparent;
-  scrollbar-width: thin;
 }
 
 .header {
-  position: sticky;
-  z-index: 2;
-  top: 0;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  justify-content: space-between;
-  min-height: 62px;
-  gap: 14px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-canvas);
+  gap: 4px;
+  height: 48px;
+  padding: 0 10px 0 16px;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 150ms var(--ease-out);
 }
 
-.identity {
+.popup.is-scrolled .header,
+.popup:has(.page-notice:not([hidden])) .header {
+  border-bottom-color: var(--color-border-default);
+}
+
+.mark {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.mark-line {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+.popup[data-page="reading"] .mark-line {
+  animation: scan 900ms linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: scaleX(0.15);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0.15);
+  }
+}
+
+/* Footer: where the job came from. */
+
+.footer {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  min-width: 0;
-  gap: 9px;
-}
-
-.identity-mark {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  font-size: 10px;
-}
-
-.identity-name,
-.identity-context {
-  display: block;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-top: 1px dashed var(--color-border-default);
+  color: var(--color-text-secondary);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
   white-space: nowrap;
 }
 
-.identity-context {
-  color: var(--color-text-muted);
-  font-size: 9px;
+.footer[hidden] {
+  display: none;
 }
 
-.notion-button {
-  min-width: 108px;
-  border: 1px solid var(--color-text-primary);
-  border-radius: 5px;
-  padding: 8px 10px;
-  color: var(--color-canvas);
-  background: var(--color-text-primary);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
+.source-name {
+  flex-shrink: 0;
 }
 
-.notion-button:hover:not(:disabled) {
-  border-color: var(--color-control-primary-hover);
-  background: var(--color-control-primary-hover);
+.source-name:empty {
+  display: none;
 }
 
-.notion-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.notion-button:disabled {
-  border-color: var(--color-border);
-  color: var(--color-text-subtle);
-  background: var(--color-surface-disabled);
-  cursor: not-allowed;
-}
-
-.notion-button.added {
-  border-color: var(--color-success-border);
-  color: var(--color-success-foreground);
-  background: var(--color-success-surface);
-}
-
-.feedback {
-  display: flex;
-  align-items: center;
-  height: 38px;
-  gap: 8px;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-  font-size: 10.5px;
-}
-
-.feedback-icon {
-  width: 15px;
-  flex: 0 0 auto;
-  text-align: center;
-}
-
-.feedback p {
-  display: -webkit-box;
-  overflow: hidden;
+.source-detail {
   min-width: 0;
-  margin: 0;
-  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+}
+
+/* Status: empty while the job is ready to file. */
+
+.status {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  white-space: nowrap;
+}
+
+.status > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status[data-tone="warning"] {
+  color: var(--color-warning-text);
+}
+
+/* An error may wrap to a second line; the header still fits it. */
+.status[data-tone="error"] {
+  color: var(--color-error-text);
+  white-space: normal;
+}
+
+.status[data-tone="error"] > span {
+  display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  text-wrap: pretty;
 }
 
-.reextract-button {
-  flex: 0 0 auto;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
-  padding: 4px 7px;
-  color: var(--color-text-secondary);
-  background: var(--color-canvas);
-  cursor: pointer;
-  font-size: 9px;
+.status[data-tone="filed"] {
+  color: var(--color-accent);
+  font-weight: 500;
 }
 
-.reextract-button:hover:not(:disabled) {
-  border-color: var(--color-text-muted);
-  color: var(--color-text-primary);
-}
-
-.reextract-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.reextract-button:disabled {
-  color: var(--color-text-subtle);
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.feedback.warning {
-  border-color: var(--color-warning-border);
-  color: var(--color-warning-foreground);
-  background: var(--color-warning-surface);
-}
-
-.feedback.success {
-  border-color: var(--color-success-border);
-  color: var(--color-success-foreground);
-  background: var(--color-success-surface);
-}
-
-.feedback.error {
-  border-color: var(--color-error-border);
-  color: var(--color-error-foreground);
-  background: var(--color-error-surface);
-}
-
-.review {
-  display: grid;
-  gap: 12px;
-  padding: 14px 14px 18px;
-}
-
-.review-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-h1 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.review-heading > span {
-  color: var(--color-text-muted);
-  font-size: 9px;
-}
-
-.compact-fields {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
-}
-
-.field {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-
-.field-wide {
-  grid-column: 1 / -1;
-}
-
-.field-label-row {
-  display: flex;
-  min-height: 15px;
-  align-items: center;
-  gap: 5px;
-}
-
-label {
-  color: var(--color-text-muted);
-  font-size: 9.5px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.field-label-row label span {
-  color: var(--color-text-subtle);
-  font-size: 8.5px;
-  letter-spacing: 0;
-  text-transform: lowercase;
-}
-
-.warning-icon {
+.status-check {
   display: none;
+  flex-shrink: 0;
   width: 14px;
   height: 14px;
-  color: var(--color-warning-foreground);
+  stroke-width: 1.75;
+  stroke-dasharray: 1;
 }
 
-.warning-icon svg,
-.edit-icon {
-  width: 100%;
-  height: 100%;
-}
-
-.input-shell {
-  position: relative;
-}
-
-input,
-textarea {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  border-radius: 5px;
-  outline: none;
-  padding: 8px 30px 8px 9px;
-  color: var(--color-text-primary);
-  background: var(--color-surface);
-  box-shadow:
-    0 0 0 1px var(--color-border),
-    0 0 0 4px var(--color-input-ring);
-  font-size: 12px;
-  transition:
-    background 150ms,
-    box-shadow 150ms;
-}
-
-textarea {
-  min-height: 116px;
-  resize: vertical;
-  line-height: 1.55;
-}
-
-.notes-shell textarea {
-  min-height: 62px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--color-text-subtle);
-}
-
-input:hover,
-textarea:hover {
-  box-shadow:
-    0 0 0 1px var(--color-border-strong),
-    0 0 0 4px var(--color-input-ring-hover);
-}
-
-input:focus,
-textarea:focus {
-  box-shadow:
-    0 0 0 1px var(--color-border),
-    0 0 0 4px var(--color-input-ring);
-}
-
-.edit-icon {
-  position: absolute;
-  top: 50%;
-  right: 9px;
-  width: 14px;
-  height: 14px;
-  color: var(--color-text-subtle);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%);
-  transition: opacity 100ms;
-}
-
-.textarea-shell .edit-icon {
-  top: 10px;
-  transform: none;
-}
-
-.input-shell:hover .edit-icon,
-.input-shell:focus-within .edit-icon {
-  opacity: 1;
-}
-
-.input-shell:focus-within .edit-icon {
-  color: var(--color-focus);
-  opacity: 0.55;
-}
-
-.field.invalid .warning-icon {
+.status[data-tone="filed"] .status-check {
   display: block;
 }
 
-.field.invalid input,
-.field.invalid textarea {
-  background: var(--color-warning-surface);
-  box-shadow:
-    0 0 0 1px var(--color-warning-border),
-    0 0 0 4px var(--color-warning-ring);
+.popup.just-filed .status-check {
+  animation: draw-check 300ms var(--ease-out) both;
 }
 
-.field.invalid input:hover,
-.field.invalid textarea:hover {
-  box-shadow:
-    0 0 0 1px var(--color-warning-border),
-    0 0 0 4px var(--color-warning-ring-hover);
+.popup.just-filed .status > span {
+  animation: settle 300ms var(--ease-out) both;
 }
 
-.field.invalid input:focus,
-.field.invalid textarea:focus {
-  box-shadow:
-    0 0 0 1px var(--color-warning-border),
-    0 0 0 4px var(--color-warning-ring);
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.page-notice {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+.page-notice[data-tone="error"] {
+  color: var(--color-error-text);
+}
+
+/* Ledger: label lane, value lane, flag lane. */
+
+.ledger {
+  flex: 1;
+  min-height: 0;
+  padding: 0 8px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 16px;
+  align-items: start;
+  padding: 8px;
+  border-radius: var(--radius-row);
+  cursor: text;
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.row:focus-within {
+  background: var(--color-bg-sunken);
+  box-shadow: inset 0 0 0 2px var(--color-border-focus);
+}
+
+.row label {
+  padding-top: 2px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-meta);
+  line-height: var(--leading-meta);
+  cursor: text;
+}
+
+.value {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  resize: none;
+  text-overflow: ellipsis;
+}
+
+.value:focus {
+  outline: none;
+}
+
+.value::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
+}
+
+.value-title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  field-sizing: content;
+  min-height: 20px;
+  max-height: 60px;
+  text-wrap: balance;
+}
+
+/* Empty, the title reads as a peer of the other placeholders. */
+.value-title::placeholder {
+  font-size: var(--text-body);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.value-notes {
+  field-sizing: content;
+  min-height: 40px;
+  max-height: 100px;
+}
+
+/* The description sizes to its text up to twelve lines and scrolls past
+   that, which keeps the popup under 600px even with a two-line title. Its
+   size never changes on focus, so clicking into it never moves text. It
+   spans the flag lane too, which leaves its scrollbar in that lane instead
+   of over the text. */
+.value-description {
+  grid-column: 2 / 4;
+  field-sizing: content;
+  min-height: 40px;
+  max-height: 240px;
+  /* The second layer keeps the scrollbar lane out of the fade. */
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0) 0,
+      rgb(0 0 0 / 0.05) calc(var(--fade-top) * 0.13),
+      rgb(0 0 0 / 0.21) calc(var(--fade-top) * 0.29),
+      rgb(0 0 0 / 0.5) calc(var(--fade-top) * 0.5),
+      rgb(0 0 0 / 0.79) calc(var(--fade-top) * 0.71),
+      rgb(0 0 0 / 0.95) calc(var(--fade-top) * 0.87),
+      black var(--fade-top),
+      black calc(100% - var(--fade-bottom)),
+      rgb(0 0 0 / 0.95) calc(100% - var(--fade-bottom) * 0.87),
+      rgb(0 0 0 / 0.79) calc(100% - var(--fade-bottom) * 0.71),
+      rgb(0 0 0 / 0.5) calc(100% - var(--fade-bottom) * 0.5),
+      rgb(0 0 0 / 0.21) calc(100% - var(--fade-bottom) * 0.29),
+      rgb(0 0 0 / 0.05) calc(100% - var(--fade-bottom) * 0.13),
+      rgb(0 0 0 / 0) 100%
+    ),
+    linear-gradient(black, black);
+  mask-position:
+    0 0,
+    100% 0;
+  mask-size:
+    calc(100% - 16px) 100%,
+    16px 100%;
+  mask-repeat: no-repeat;
+  animation:
+    fade-top linear both,
+    fade-bottom linear both;
+  animation-timeline: scroll(self), scroll(self);
+  animation-range:
+    0 32px,
+    calc(100% - 32px) 100%;
+}
+
+.value-description:placeholder-shown {
+  min-height: 60px;
+}
+
+/* Scrollbars: a thin rounded thumb in a fixed lane, shown while the pointer
+   is over the area; the fades already signal there is more to read.
+   Changing a custom property on hover forces Chrome to repaint the
+   scrollbar, which it otherwise skips. */
+@property --scrollbar-repaint {
+  syntax: "*";
+  inherits: false;
+}
+
+@media (forced-colors: none) {
+  .value-description::-webkit-scrollbar {
+    width: 16px;
+  }
+
+  .ledger::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  :is(.value-description, .ledger)::-webkit-scrollbar-track {
+    margin: 4px 0;
+    background-color: transparent;
+  }
+
+  :is(.value-description, .ledger)::-webkit-scrollbar-thumb {
+    border: 3.5px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    background-color: transparent;
+  }
+
+  /* Centers a 3px thumb in the 16px flag lane. */
+  .value-description::-webkit-scrollbar-thumb {
+    border-inline-width: 6.5px;
+  }
+
+  :is(
+    .value-description:is(:hover, :focus),
+    .ledger:hover
+  )::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-default);
+  }
+
+  :is(.value-description, .ledger)::-webkit-scrollbar-thumb:is(
+    :hover,
+    :active
+  ) {
+    background-color: var(--color-text-tertiary);
+  }
+
+  :is(.value-description, .ledger):hover {
+    --scrollbar-repaint: ;
+  }
+}
+
+/* Scroll masks: each edge of the description fades only while text is
+   hidden past it, driven by its own scroll position. With nothing to scroll
+   the timeline is inactive and both edges stay sharp. The ramp follows an
+   ease-in-out curve so the fade has no visible start line. */
+@property --fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes fade-top {
+  from {
+    --fade-top: 0px;
+  }
+  to {
+    --fade-top: 32px;
+  }
+}
+
+@keyframes fade-bottom {
+  from {
+    --fade-bottom: 32px;
+  }
+  to {
+    --fade-bottom: 0px;
+  }
+}
+
+.row-flag {
+  display: none;
+  grid-area: 1 / 3;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--color-warning-text);
+}
+
+.row.is-missing label {
+  color: var(--color-warning-text);
+}
+
+.row.is-missing .value::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.row.is-missing .row-flag {
+  display: block;
+}
+
+/* While reading, empty values show a quiet bar instead of a placeholder. */
+.popup[data-page="reading"] .value:not(.value-notes):placeholder-shown {
+  background-image: linear-gradient(
+    var(--color-bg-sunken),
+    var(--color-bg-sunken)
+  );
+  background-repeat: no-repeat;
+  background-size: 40% 8px;
+  background-position: 0 6px;
+}
+
+.popup[data-page="reading"]
+  .value:not(.value-notes):placeholder-shown::placeholder {
+  color: transparent;
+}
+
+.popup[data-filing="filed"] .row {
+  cursor: auto;
+}
+
+.popup[data-filing="filed"] .row:hover {
+  background: transparent;
+}
+
+.primary-button,
+.text-button,
+.icon-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  font-size: var(--text-body);
+  line-height: var(--leading-meta);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+.primary-button:active,
+.text-button:active,
+.icon-button:active {
+  transform: scale(0.96);
+}
+
+/* Optical padding: the trailing glyphs carry their own side bearing inside
+   the 16px grid, so the end side gets less padding than the text side. */
+.primary-button {
+  gap: 6px;
+  padding: 0 8px 0 10px;
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+.primary-button > svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (hover: hover) {
+  .primary-button:hover {
+    background: color-mix(
+      in oklch,
+      var(--color-text-primary) 86%,
+      var(--color-bg)
+    );
+  }
+}
+
+/* Shortcut and spinner share one cell, so the button keeps its width. */
+.button-trail {
+  display: grid;
+  justify-items: end;
+  align-items: center;
+}
+
+.button-trail > * {
+  grid-area: 1 / 1;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  color: color-mix(in oklch, var(--color-bg) 70%, transparent);
+  font-size: var(--text-meta);
+  font-weight: 400;
+}
+
+.shortcut svg {
+  width: 12px;
+  height: 12px;
+}
+
+.shortcut-ctrl {
+  margin-right: 1px;
+}
+
+.shortcut[data-platform="mac"] .shortcut-ctrl,
+.shortcut[data-platform="other"] .shortcut-mod {
+  display: none;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  visibility: hidden;
+  animation: spin 800ms linear infinite;
+}
+
+.popup[data-filing="adding"] .spinner {
+  visibility: visible;
+}
+
+.popup[data-filing="adding"] .shortcut {
+  visibility: hidden;
+}
+
+.popup[data-filing="adding"] .primary-button {
+  cursor: progress;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.text-button {
+  padding: 0 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.icon-button {
+  width: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (hover: hover) {
+  .text-button:hover,
+  .icon-button:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+}
+
+.primary-button[hidden],
+.text-button[hidden],
+.icon-button[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup[data-page="reading"] .mark-line {
+    animation: none;
+    transform: scaleX(0.5);
+  }
+
+  .spinner {
+    animation-duration: 2400ms;
+  }
+
+  .popup.just-filed .status-check {
+    animation: none;
+  }
+
+  .popup.just-filed .status > span {
+    animation-name: fade-in;
+  }
+
+  .primary-button:active,
+  .text-button:active,
+  .icon-button:active {
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }

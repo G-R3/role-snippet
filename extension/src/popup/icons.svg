@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Exported from the Icons board in the Paper file "Role Snippet".
+       16px grid, 1.5 stroke, round caps. Stroke color comes from the
+       referencing element. -->
+  <symbol id="command" viewBox="0 0 16 16">
+    <path d="M10 4v8a2 2 0 1 0 2-2H4a2 2 0 1 0 2 2V4a2 2 0 1 0-2 2h8a2 2 0 1 0-2-2" />
+  </symbol>
+  <symbol id="enter" viewBox="0 0 16 16">
+    <path d="M12.5 3.5v4a2.5 2.5 0 0 1-2.5 2.5H3.5M6.5 7l-3 3 3 3" />
+  </symbol>
+  <symbol id="spinner" viewBox="0 0 16 16">
+    <circle cx="8" cy="8" r="5.25" stroke-opacity="0.25" />
+    <path d="M8 2.75A5.25 5.25 0 0 1 13.25 8" />
+  </symbol>
+  <symbol id="refresh" viewBox="0 0 16 16">
+    <path d="M13.25 8a5.25 5.25 0 1 1-1.54-3.71M13.25 2.75v2.5h-2.5" />
+  </symbol>
+  <symbol id="external" viewBox="0 0 16 16">
+    <path d="M4.75 11.25 11.25 4.75M6 4.75h5.25V10" />
+  </symbol>
+  <symbol id="check" viewBox="0 0 16 16">
+    <path d="M3.5 8.5 6.5 11.5 12.5 4.5" pathLength="1" />
+  </symbol>
+  <symbol id="flag" viewBox="0 0 16 16">
+    <path d="M7.15 2.9a1 1 0 0 1 1.7 0l5.3 9.1a1 1 0 0 1-.85 1.5H2.7a1 1 0 0 1-.85-1.5l5.3-9.1Z" />
+    <path d="M8 6.25v3M8 11.5h.01" />
+  </symbol>
+</svg>

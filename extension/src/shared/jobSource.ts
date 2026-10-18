@@ -67,6 +67,18 @@ export function getJobSource(url: URL): JobSource | null {
   return null;
 }
 
+export function parseUrl(value: string | undefined): URL | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
 export function isSupportedJobPageUrl(url: URL): boolean {
   return getJobSource(url) !== null;
 }
@@ -108,4 +120,31 @@ export function getJobPageIdentity(url: URL): string | null {
     case null:
       return null;
   }
+}
+
+const JOB_SOURCE_LABELS = {
+  linkedin: "LinkedIn",
+  ashby: "Ashby",
+  greenhouse: "Greenhouse",
+  indeed: "Indeed",
+  yc: "Work at a Startup",
+} satisfies Record<JobSource, string>;
+
+export function getJobSourceLabel(source: JobSource): string {
+  return JOB_SOURCE_LABELS[source];
+}
+
+export function getJobSourceLabels(): string[] {
+  return Object.values(JOB_SOURCE_LABELS);
+}
+
+// The board's own job ID, for display beside the source name.
+export function getJobDisplayId(url: URL): string | null {
+  const identity = getJobPageIdentity(url);
+
+  if (!identity || identity.startsWith("linkedin:/")) {
+    return null;
+  }
+
+  return identity.slice(identity.lastIndexOf(":") + 1);
 }

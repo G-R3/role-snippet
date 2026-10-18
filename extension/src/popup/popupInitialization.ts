@@ -1,12 +1,12 @@
 import type { JobPost } from "../shared/job";
-import { getJobPageIdentity } from "../shared/jobSource";
+import { getJobPageIdentity, parseUrl } from "../shared/jobSource";
 
 type ActiveTab = {
   id?: number;
   url?: string;
 };
 
-type StatusTone = "neutral" | "success" | "error";
+type StatusTone = "neutral" | "error";
 
 export type PopupInitializationDependencies = {
   restoreSavedJobPost: () => Promise<JobPost | null>;
@@ -17,16 +17,9 @@ export type PopupInitializationDependencies = {
   setSyncDisabled: (disabled: boolean) => void;
 };
 
-function getJobIdentity(url: string | undefined): string | null {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    return getJobPageIdentity(new URL(url));
-  } catch {
-    return null;
-  }
+function getJobIdentity(value: string | undefined): string | null {
+  const url = parseUrl(value);
+  return url ? getJobPageIdentity(url) : null;
 }
 
 // Captures the active URL before attempting job detail extraction.
@@ -66,12 +59,9 @@ export async function initializePopup({
     );
     setCurrentUrl(tab.url, isSavedJob);
 
-    if (!activeJobIdentity || !tab.id) {
-      return;
-    }
-
-    if (isSavedJob) {
-      setStatus("Restored saved edits for this job.", "success");
+    // Saved edits for this job are restored as they are, without reading
+    // the page again over them.
+    if (!activeJobIdentity || !tab.id || isSavedJob) {
       return;
     }
 

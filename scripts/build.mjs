@@ -78,9 +78,18 @@ await cp(
   resolve(distDir, "popup/popup.css"),
 );
 await cp(
+  resolve(extensionDir, "src/popup/icons.svg"),
+  resolve(distDir, "popup/icons.svg"),
+);
+await cp(
   resolve(extensionDir, "src/popup/fonts"),
   resolve(distDir, "popup/fonts"),
   { recursive: true },
 );
+
+await cp(resolve(extensionDir, "icons"), resolve(distDir, "icons"), {
+  recursive: true,
+  filter: (source) => !source.endsWith(".svg"),
+});
 
 console.log(`Built extension to ${distDir}`);

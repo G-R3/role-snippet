@@ -1,16 +1,30 @@
-import type { JobPost } from "../shared/job";
+import {
+  type FiledJob,
+  formatFiledDate,
+  getFiledJobKey,
+  readFiledJobs,
+} from "../shared/filedJobs";
+import type { JobPost, JobPostField } from "../shared/job";
 import {
   emptyJobPost,
   getMissingRequiredJobPostFields,
-  hasMinimumJobPostFields,
   isJobPost,
   JOB_POST_FIELDS,
   REQUIRED_JOB_POST_FIELDS,
 } from "../shared/job";
 import {
+  getJobDisplayId,
+  getJobSource,
+  getJobSourceLabel,
+  getJobSourceLabels,
+  isSupportedJobPageUrl,
+  parseUrl,
+} from "../shared/jobSource";
+import {
   EXTRACT_JOB_POST_MESSAGE,
   type ExtractJobPostRequest,
   type ExtractJobPostResponse,
+  NOTION_UNREACHABLE_ERROR,
   SYNC_JOB_POST_MESSAGE,
   type SyncJobPostRequest,
   type SyncJobPostResponse,
@@ -24,37 +38,58 @@ import { initializePopup } from "./popupInitialization";
 
 const STORED_JOB_POST_KEY = "lastExtractedJobPost";
 
-const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
-const feedbackElement = getElement<HTMLElement>("feedback");
-const feedbackIcon = getElement<HTMLElement>("feedback-icon");
-const statusElement = getElement<HTMLParagraphElement>("status");
+const popup = getElement<HTMLElement>("popup");
+const formElement = getElement<HTMLFormElement>("job-form");
+const statusLine = getElement<HTMLElement>("status");
+const statusMessage = getElement<HTMLElement>("status-message");
+const sourceFooter = getElement<HTMLElement>("source");
+const sourceName = getElement<HTMLElement>("source-name");
+const sourceDetail = getElement<HTMLElement>("source-detail");
 const reextractButton = getElement<HTMLButtonElement>("reextract-button");
+const pageNotice = getElement<HTMLParagraphElement>("page-notice");
+const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
+const shortcutHint = getElement<HTMLElement>("shortcut-hint");
+const fileAgainButton = getElement<HTMLButtonElement>("file-again-button");
+const openNotionLink = getElement<HTMLAnchorElement>("open-notion-link");
 const fieldElements = {
   sourceUrl: getElement<HTMLInputElement>("url-value"),
-  title: getElement<HTMLInputElement>("title-value"),
+  title: getElement<HTMLTextAreaElement>("title-value"),
   company: getElement<HTMLInputElement>("company-value"),
   location: getElement<HTMLInputElement>("location-value"),
   description: getElement<HTMLTextAreaElement>("description-value"),
   notes: getElement<HTMLTextAreaElement>("notes-value"),
 } satisfies JobPostInputElements;
-const requiredFieldElements = REQUIRED_JOB_POST_FIELDS.map((field) => ({
-  field,
-  container: getElement<HTMLElement>(`${field}-field`),
-  warning: getElement<HTMLElement>(`${field}-warning`),
-}));
 
-type ActionState = "initializing" | "extracting" | "idle" | "adding" | "added";
-type StatusTone = "neutral" | "warning" | "success" | "error";
+// Labels match the Notion properties each field is written to.
+const FIELD_NAMES: Partial<Record<JobPostField, string>> = {
+  title: "a role",
+  company: "a company",
+  description: "a description",
+};
 
-const STATUS_ICONS = {
-  neutral: "·",
-  warning: "⚠",
-  success: "✓",
-  error: "!",
-} satisfies Record<StatusTone, string>;
+// The markup's placeholders, restored once a missing field is filled.
+const RESTING_PLACEHOLDERS = new Map(
+  REQUIRED_JOB_POST_FIELDS.map((field) => [
+    field,
+    fieldElements[field].placeholder,
+  ]),
+);
 
-let actionState: ActionState = "initializing";
-let statusTone: StatusTone = "neutral";
+const SUPPORTED_BOARDS = `Role Snippet reads ${new Intl.ListFormat("en", {
+  type: "conjunction",
+}).format(getJobSourceLabels())}. Fill this one in by hand.`;
+
+type PageState = "reading" | "read" | "failed" | "unsupported";
+type FilingState = "ready" | "missing" | "adding" | "filed" | "error";
+type NoticeTone = "neutral" | "error";
+
+let pageState: PageState = "reading";
+let filingState: FilingState = "ready";
+let isInitializing = true;
+let hasAttemptedFiling = false;
+let activeUrl: URL | null = null;
+let filedJob: FiledJob | null = null;
+let filingError = "";
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -66,76 +101,150 @@ function getElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function setStatus(message: string, tone: StatusTone = "neutral"): void {
-  statusTone = tone;
-  statusElement.textContent = message;
-  feedbackIcon.textContent = STATUS_ICONS[tone];
-  feedbackElement.className =
-    tone === "neutral" ? "feedback" : `feedback ${tone}`;
-  feedbackElement.setAttribute("role", tone === "error" ? "alert" : "status");
-  feedbackElement.setAttribute(
-    "aria-live",
-    tone === "error" ? "assertive" : "polite",
-  );
+// The status line is one short line, so several gaps are counted rather
+// than listed; the rows themselves are flagged.
+function describeMissingFields(fields: JobPostField[]): string {
+  const [onlyField] = fields;
+
+  if (fields.length === 1 && onlyField) {
+    return `Add ${FIELD_NAMES[onlyField] ?? onlyField} first`;
+  }
+
+  return `Add ${fields.length} missing fields`;
 }
 
-function renderFormState(): void {
-  const missingFields = new Set(
-    getMissingRequiredJobPostFields(readFromInputs(fieldElements)),
+function getMissingFields(): JobPostField[] {
+  return getMissingRequiredJobPostFields(readFromInputs(fieldElements));
+}
+
+function setNotice(message: string, tone: NoticeTone = "neutral"): void {
+  pageNotice.textContent = message;
+  pageNotice.hidden = message === "";
+  pageNotice.dataset.tone = tone;
+  pageNotice.setAttribute("role", tone === "error" ? "alert" : "status");
+}
+
+function renderPage(): void {
+  popup.dataset.page = pageState;
+  reextractButton.hidden =
+    pageState === "unsupported" || filingState === "filed";
+  reextractButton.disabled = isInitializing || pageState === "reading";
+  formElement.setAttribute("aria-busy", String(pageState === "reading"));
+}
+
+// Where the job came from: the board and its own job ID, or the host of a
+// page Role Snippet can't read.
+function renderSource(): void {
+  const source = activeUrl ? getJobSource(activeUrl) : null;
+
+  sourceName.textContent = source ? getJobSourceLabel(source) : "";
+  sourceDetail.textContent = activeUrl
+    ? source
+      ? (getJobDisplayId(activeUrl) ?? "")
+      : activeUrl.host
+    : "";
+  sourceFooter.hidden = !activeUrl;
+}
+
+// The header speaks only when something needs attention or just changed.
+// A ready job page says nothing: the button already says what will happen.
+function getStatusMessage(missingFields: JobPostField[]): string {
+  switch (filingState) {
+    case "missing":
+      return describeMissingFields(missingFields);
+    case "adding":
+      return "Filing in Notion…";
+    case "filed":
+      return filedJob
+        ? `Applied ${formatFiledDate(filedJob.filedAt)}`
+        : "Applied";
+    case "error":
+      return filingError;
+    case "ready":
+      break;
+  }
+
+  if (pageState === "reading") {
+    const source = activeUrl ? getJobSource(activeUrl) : null;
+    return source ? `Reading ${getJobSourceLabel(source)}…` : "Reading…";
+  }
+
+  return pageState === "failed" ? "Couldn’t read this page" : "";
+}
+
+function renderFields(missingFields: JobPostField[]): void {
+  const flaggedFields = new Set(
+    hasAttemptedFiling && filingState !== "filed" ? missingFields : [],
   );
 
-  for (const { field, container, warning } of requiredFieldElements) {
-    const showWarning =
-      actionState !== "initializing" && missingFields.has(field);
+  for (const field of REQUIRED_JOB_POST_FIELDS) {
     const input = fieldElements[field];
-    container.classList.toggle("invalid", showWarning);
-    warning.hidden = !showWarning;
-    input.setAttribute("aria-invalid", String(showWarning));
+    const isMissing = flaggedFields.has(field);
+    input.closest(".row")?.classList.toggle("is-missing", isMissing);
+    input.setAttribute("aria-invalid", String(isMissing));
+    input.placeholder = !isMissing
+      ? (RESTING_PLACEHOLDERS.get(field) ?? "")
+      : pageState === "read"
+        ? "Not found on the page"
+        : "Required";
 
-    if (showWarning) {
+    if (isMissing) {
       input.setAttribute("aria-describedby", `${field}-warning`);
     } else {
       input.removeAttribute("aria-describedby");
     }
   }
 
-  addToNotionButton.textContent =
-    actionState === "initializing" || actionState === "extracting"
-      ? "Extracting…"
-      : actionState === "adding"
-        ? "Adding…"
-        : actionState === "added"
-          ? "✓ Added"
-          : "Add to Notion";
-  addToNotionButton.disabled = actionState !== "idle" || missingFields.size > 0;
-  addToNotionButton.classList.toggle("added", actionState === "added");
-  reextractButton.textContent =
-    actionState === "extracting" ? "Extracting…" : "Extract again";
-  reextractButton.disabled =
-    actionState === "initializing" ||
-    actionState === "extracting" ||
-    actionState === "adding";
+  for (const field of JOB_POST_FIELDS) {
+    fieldElements[field].readOnly = filingState === "filed";
+  }
 }
 
-function showValidationStatus(): void {
-  const missingCount = getMissingRequiredJobPostFields(
-    readFromInputs(fieldElements),
-  ).length;
-
-  if (missingCount > 0) {
-    setStatus(
-      `Review ${missingCount} required ${missingCount === 1 ? "field" : "fields"} before adding.`,
-      "warning",
-    );
-    return;
+function getStatusTone(): string {
+  if (filingState === "missing" || pageState === "failed") {
+    return "warning";
   }
 
-  setStatus("Ready to add", "success");
+  return filingState === "error" || filingState === "filed" ? filingState : "";
 }
 
-function setActionState(state: ActionState): void {
-  actionState = state;
-  renderFormState();
+function renderActions(missingFields: JobPostField[]): void {
+  popup.dataset.filing = filingState;
+  const isFiled = filingState === "filed";
+  statusMessage.textContent = getStatusMessage(missingFields);
+  statusLine.dataset.tone = getStatusTone();
+  // Long backend errors clamp to two lines; the full text stays reachable.
+  statusMessage.title = filingState === "error" ? filingError : "";
+  statusLine.setAttribute("role", filingState === "error" ? "alert" : "status");
+  addToNotionButton.hidden = isFiled;
+  addToNotionButton.setAttribute("aria-busy", String(filingState === "adding"));
+  fileAgainButton.hidden = !isFiled;
+  openNotionLink.hidden = !isFiled || !filedJob?.notionUrl;
+
+  if (filedJob?.notionUrl) {
+    openNotionLink.href = filedJob.notionUrl;
+  }
+}
+
+function render(): void {
+  const missingFields = getMissingFields();
+  renderPage();
+  renderFields(missingFields);
+  renderActions(missingFields);
+}
+
+function setPageState(state: PageState): void {
+  pageState = state;
+  render();
+}
+
+function setFilingState(state: FilingState): void {
+  filingState = state;
+  render();
+}
+
+function updateScrollEdges(): void {
+  popup.classList.toggle("is-scrolled", formElement.scrollTop > 0);
 }
 
 async function saveJobPost(jobPost: JobPost): Promise<void> {
@@ -156,6 +265,11 @@ async function restoreSavedJobPost(): Promise<JobPost | null> {
   return savedJobPost;
 }
 
+async function findFiledJob(sourceUrl: string): Promise<FiledJob | null> {
+  const key = getFiledJobKey(sourceUrl);
+  return key ? ((await readFiledJobs())[key] ?? null) : null;
+}
+
 async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab ?? null;
@@ -166,6 +280,24 @@ function setCurrentUrl(url: string, preserveDetails: boolean): void {
     ...(preserveDetails ? readFromInputs(fieldElements) : emptyJobPost),
     sourceUrl: url,
   });
+
+  activeUrl = parseUrl(url);
+  const isJobPage = activeUrl !== null && isSupportedJobPageUrl(activeUrl);
+  pageState = isJobPage ? "read" : "unsupported";
+  setNotice(isJobPage ? "" : SUPPORTED_BOARDS);
+  renderSource();
+  render();
+
+  // Looked up alongside reading the page, not after it.
+  void findFiledJob(url)
+    .catch(() => null)
+    .then((record) => {
+      if (record) {
+        filedJob = record;
+        filingState = "filed";
+        render();
+      }
+    });
 }
 
 function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
@@ -184,7 +316,7 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
           resolve({
             ok: false,
             error:
-              "Could not reach the job page. Reload the tab and try again.",
+              "The tab may have loaded before Role Snippet. Reload it, then read it again.",
           });
           return;
         }
@@ -192,7 +324,7 @@ function sendExtractMessage(tabId: number): Promise<ExtractJobPostResponse> {
         resolve(
           response ?? {
             ok: false,
-            error: "The page did not return job details.",
+            error: "The page didn’t return any job details.",
           },
         );
       },
@@ -215,7 +347,7 @@ function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
         if (lastError) {
           resolve({
             ok: false,
-            error: "Could not reach the extension background worker.",
+            error: "Role Snippet’s background worker didn’t answer. Try again.",
           });
           return;
         }
@@ -223,7 +355,7 @@ function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
         resolve(
           response ?? {
             ok: false,
-            error: "The Notion sync did not return a response.",
+            error: NOTION_UNREACHABLE_ERROR,
           },
         );
       },
@@ -232,116 +364,184 @@ function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
 }
 
 async function extractFromTab(tabId: number): Promise<void> {
-  setStatus("Looking for job details...");
+  setNotice("");
+  setPageState("reading");
   const response = await sendExtractMessage(tabId);
 
   if (!response.ok) {
-    setStatus(response.error, "error");
+    setNotice(response.error);
+    setPageState("failed");
     return;
   }
 
   writeToInputs(fieldElements, response.jobPost);
+  setPageState("read");
 
   try {
     await saveJobPost(response.jobPost);
   } catch {
-    setStatus("Job extracted, but could not save it.", "error");
+    setNotice(
+      "Read the page, but couldn’t keep a copy for next time.",
+      "error",
+    );
+  }
+}
+
+function setStatus(message: string, tone: NoticeTone = "neutral"): void {
+  if (!activeUrl) {
+    pageState = "unsupported";
+  }
+
+  setNotice(message, tone);
+  render();
+}
+
+async function fileCurrentJob(): Promise<void> {
+  if (
+    isInitializing ||
+    filingState === "adding" ||
+    filingState === "filed" ||
+    pageState === "reading"
+  ) {
     return;
   }
 
-  const confidenceMessage = hasMinimumJobPostFields(response.jobPost)
-    ? "Job post extracted."
-    : "Extracted partial job details. Review before adding to Notion.";
-  setStatus(
-    confidenceMessage,
-    hasMinimumJobPostFields(response.jobPost) ? "success" : "neutral",
-  );
-}
+  hasAttemptedFiling = true;
+  const [firstMissing] = getMissingFields();
 
-async function addCurrentJobPostToNotion(): Promise<void> {
-  if (actionState !== "idle") {
+  if (firstMissing) {
+    setFilingState("missing");
+    fieldElements[firstMissing].focus();
     return;
   }
 
   const jobPost = readFromInputs(fieldElements);
-
-  if (!hasMinimumJobPostFields(jobPost)) {
-    renderFormState();
-    showValidationStatus();
-    return;
-  }
-
-  setActionState("adding");
-  setStatus("Adding job to Notion…");
+  setFilingState("adding");
 
   try {
     const response = await sendSyncMessage(jobPost);
 
     if (!response.ok) {
-      setActionState("idle");
-      setStatus(response.error, "error");
+      filingError = response.error;
+      setFilingState("error");
       return;
     }
 
-    setActionState("added");
-    setStatus("Job added to Notion.", "success");
+    filedJob = {
+      filedAt: new Date().toISOString(),
+      notionUrl: response.notionPage?.url,
+    };
+    popup.classList.add("just-filed");
+    setFilingState("filed");
+    (openNotionLink.hidden ? fileAgainButton : openNotionLink).focus();
   } catch {
-    setActionState("idle");
-    setStatus("Could not add the job to Notion. Try again.", "error");
+    filingError = NOTION_UNREACHABLE_ERROR;
+    setFilingState("error");
   }
 }
 
 async function reextractCurrentTab(): Promise<void> {
-  if (
-    actionState === "initializing" ||
-    actionState === "extracting" ||
-    actionState === "adding"
-  ) {
+  if (isInitializing || pageState === "reading") {
     return;
   }
-
-  setActionState("extracting");
 
   try {
     const tab = await getActiveTab();
 
     if (!tab?.id) {
-      setStatus("Could not find the active tab.", "error");
+      setNotice("Couldn’t find the active tab.", "error");
+      setPageState("failed");
       return;
     }
 
     await extractFromTab(tab.id);
   } catch {
-    setStatus("Could not extract job details. Try again.", "error");
-  } finally {
-    setActionState("idle");
+    setNotice("Couldn’t read the page. Try again.", "error");
+    setPageState("failed");
   }
 }
 
-writeToInputs(fieldElements, emptyJobPost);
-renderFormState();
+function fileAgain(): void {
+  filedJob = null;
+  hasAttemptedFiling = false;
+  popup.classList.remove("just-filed");
+  setFilingState("ready");
+  addToNotionButton.focus();
+}
 
-addToNotionButton.addEventListener("click", () => {
-  void addCurrentJobPostToNotion();
+shortcutHint.dataset.platform = /Mac|iPhone|iPad/.test(navigator.userAgent)
+  ? "mac"
+  : "other";
+writeToInputs(fieldElements, emptyJobPost);
+render();
+
+formElement.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void fileCurrentJob();
 });
+
+formElement.addEventListener("scroll", updateScrollEdges, { passive: true });
+new ResizeObserver(updateScrollEdges).observe(formElement);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.isComposing) {
+    return;
+  }
+
+  if (event.metaKey || event.ctrlKey) {
+    event.preventDefault();
+    void fileCurrentJob();
+    return;
+  }
+
+  // Enter never files or adds a line break to single-line values.
+  const target = event.target;
+  if (target instanceof HTMLInputElement || target === fieldElements.title) {
+    event.preventDefault();
+  }
+});
+
+// Clicking anywhere on a row edits its value.
+for (const row of formElement.querySelectorAll<HTMLElement>(".row")) {
+  row.addEventListener("mousedown", (event) => {
+    const value = row.querySelector<HTMLElement>(".value");
+
+    if (value && event.target === row) {
+      event.preventDefault();
+      value.focus();
+    }
+  });
+}
+
+fieldElements.title.addEventListener("input", () => {
+  const title = fieldElements.title;
+
+  if (/\n/.test(title.value)) {
+    title.value = title.value.replace(/\s*\n+\s*/g, " ");
+  }
+});
+
+for (const field of JOB_POST_FIELDS) {
+  fieldElements[field].addEventListener("input", () => {
+    if (
+      filingState === "error" ||
+      (filingState === "missing" && getMissingFields().length === 0)
+    ) {
+      filingState = "ready";
+    }
+
+    render();
+    void saveJobPost(readFromInputs(fieldElements)).catch(() => {
+      setNotice("Couldn’t save your edits.", "error");
+    });
+  });
+}
 
 reextractButton.addEventListener("click", () => {
   void reextractCurrentTab();
 });
 
-for (const field of JOB_POST_FIELDS) {
-  fieldElements[field].addEventListener("input", () => {
-    renderFormState();
-
-    if (actionState === "idle") {
-      showValidationStatus();
-    }
-
-    void saveJobPost(readFromInputs(fieldElements)).catch(() => {
-      setStatus("Could not save changes.", "error");
-    });
-  });
-}
+fileAgainButton.addEventListener("click", fileAgain);
 
 void initializePopup({
   restoreSavedJobPost,
@@ -350,10 +550,12 @@ void initializePopup({
   extractFromTab,
   setStatus,
   setSyncDisabled(disabled) {
-    setActionState(disabled ? "initializing" : "idle");
+    isInitializing = disabled;
 
-    if (!disabled && statusTone !== "error") {
-      showValidationStatus();
+    if (!disabled && pageState === "reading") {
+      pageState = activeUrl ? "read" : "unsupported";
     }
+
+    render();
   },
 });

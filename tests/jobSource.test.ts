@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  getJobDisplayId,
   getJobPageIdentity,
   getJobSource,
+  getJobSourceLabel,
   isSupportedJobPageUrl,
 } from "../extension/src/shared/jobSource";
 
@@ -106,5 +108,31 @@ describe("Indeed job URL recognition", () => {
     "https://notindeed.com/viewjob?jk=example-job-key",
   ])("rejects %s", (value) => {
     expect(getJobSource(new URL(value))).toBeNull();
+  });
+});
+
+describe("job source display", () => {
+  test("labels each source", () => {
+    expect(getJobSourceLabel("yc")).toBe("Work at a Startup");
+    expect(getJobSourceLabel("linkedin")).toBe("LinkedIn");
+  });
+
+  test("shows the board's job ID", () => {
+    expect(
+      getJobDisplayId(
+        new URL("https://www.linkedin.com/jobs/view/1234567890/"),
+      ),
+    ).toBe("1234567890");
+    expect(
+      getJobDisplayId(
+        new URL("https://job-boards.greenhouse.io/acme/jobs/1234567"),
+      ),
+    ).toBe("1234567");
+  });
+
+  test("has no ID for LinkedIn pages without one", () => {
+    expect(
+      getJobDisplayId(new URL("https://www.linkedin.com/jobs/collections/")),
+    ).toBeNull();
   });
 });
