@@ -112,6 +112,23 @@ describe("popup initialization", () => {
     ]);
   });
 
+  test("keeps a draft typed by hand on a page it can't read", async () => {
+    const harness = createHarness({
+      savedJobPost: {
+        ...savedJobPost,
+        sourceUrl: "https://example.com/careers",
+      },
+      activeTab: { id: 42, url: "https://example.com" },
+    });
+
+    await initializePopup(harness.dependencies);
+
+    expect(harness.extractedTabIds).toEqual([]);
+    expect(harness.capturedUrls).toEqual([
+      { url: "https://example.com", preserveDetails: true },
+    ]);
+  });
+
   test("leaves an empty popup ready for manual entry without a saved draft", async () => {
     const harness = createHarness({
       activeTab: { id: 42, url: "https://example.com" },

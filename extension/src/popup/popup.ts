@@ -50,6 +50,7 @@ const pageNotice = getElement<HTMLParagraphElement>("page-notice");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
 const shortcutHint = getElement<HTMLElement>("shortcut-hint");
 const fileAgainButton = getElement<HTMLButtonElement>("file-again-button");
+const action = getElement<HTMLElement>("action");
 const openNotionLink = getElement<HTMLAnchorElement>("open-notion-link");
 const fieldElements = {
   sourceUrl: getElement<HTMLInputElement>("url-value"),
@@ -194,10 +195,6 @@ function renderFields(missingFields: JobPostField[]): void {
       input.removeAttribute("aria-describedby");
     }
   }
-
-  for (const field of JOB_POST_FIELDS) {
-    fieldElements[field].readOnly = filingState === "filed";
-  }
 }
 
 function getStatusTone(): string {
@@ -216,10 +213,10 @@ function renderActions(missingFields: JobPostField[]): void {
   // Long backend errors clamp to two lines; the full text stays reachable.
   statusMessage.title = filingState === "error" ? filingError : "";
   statusLine.setAttribute("role", filingState === "error" ? "alert" : "status");
-  addToNotionButton.hidden = isFiled;
   addToNotionButton.setAttribute("aria-busy", String(filingState === "adding"));
   fileAgainButton.hidden = !isFiled;
-  openNotionLink.hidden = !isFiled || !filedJob?.notionUrl;
+  // A filing Notion didn't link back to has nothing to open.
+  action.hidden = isFiled && !filedJob?.notionUrl;
 
   if (filedJob?.notionUrl) {
     openNotionLink.href = filedJob.notionUrl;
@@ -276,9 +273,12 @@ async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
 }
 
 function setCurrentUrl(url: string, preserveDetails: boolean): void {
+  const details = preserveDetails
+    ? readFromInputs(fieldElements)
+    : emptyJobPost;
   writeToInputs(fieldElements, {
-    ...(preserveDetails ? readFromInputs(fieldElements) : emptyJobPost),
-    sourceUrl: url,
+    ...details,
+    sourceUrl: details.sourceUrl || url,
   });
 
   activeUrl = parseUrl(url);
@@ -396,6 +396,8 @@ function setStatus(message: string, tone: NoticeTone = "neutral"): void {
   render();
 }
 
+// A filed job only files again through its own button, never the shortcut,
+// so a stray Cmd+Enter can't add a duplicate page.
 async function fileCurrentJob(): Promise<void> {
   if (
     isInitializing ||
@@ -433,7 +435,7 @@ async function fileCurrentJob(): Promise<void> {
     };
     popup.classList.add("just-filed");
     setFilingState("filed");
-    (openNotionLink.hidden ? fileAgainButton : openNotionLink).focus();
+    (action.hidden ? fileAgainButton : openNotionLink).focus();
   } catch {
     filingError = NOTION_UNREACHABLE_ERROR;
     setFilingState("error");
@@ -462,11 +464,10 @@ async function reextractCurrentTab(): Promise<void> {
 }
 
 function fileAgain(): void {
-  filedJob = null;
-  hasAttemptedFiling = false;
   popup.classList.remove("just-filed");
   setFilingState("ready");
   addToNotionButton.focus();
+  void fileCurrentJob();
 }
 
 shortcutHint.dataset.platform = /Mac|iPhone|iPad/.test(navigator.userAgent)
@@ -474,6 +475,8 @@ shortcutHint.dataset.platform = /Mac|iPhone|iPad/.test(navigator.userAgent)
   : "other";
 writeToInputs(fieldElements, emptyJobPost);
 render();
+// The popup opens straight into the role, the field most often corrected.
+fieldElements.title.focus();
 
 formElement.addEventListener("submit", (event) => {
   event.preventDefault();

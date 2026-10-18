@@ -53,15 +53,20 @@ export async function initializePopup({
     }
 
     const activeJobIdentity = getJobIdentity(tab.url);
-    const isSavedJob = Boolean(
-      activeJobIdentity &&
-        activeJobIdentity === getJobIdentity(savedJobPost?.sourceUrl),
+    const savedJobIdentity = getJobIdentity(savedJobPost?.sourceUrl);
+    // Saved edits for this job are kept, and so is a draft typed by hand,
+    // until a job page Role Snippet can read replaces it.
+    const keepsSavedJob = Boolean(
+      savedJobPost &&
+        (activeJobIdentity
+          ? activeJobIdentity === savedJobIdentity
+          : !savedJobIdentity),
     );
-    setCurrentUrl(tab.url, isSavedJob);
+    setCurrentUrl(tab.url, keepsSavedJob);
 
-    // Saved edits for this job are restored as they are, without reading
-    // the page again over them.
-    if (!activeJobIdentity || !tab.id || isSavedJob) {
+    // Saved edits are restored as they are, without reading the page again
+    // over them.
+    if (!activeJobIdentity || !tab.id || keepsSavedJob) {
       return;
     }
 

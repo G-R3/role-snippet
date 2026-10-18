@@ -30,33 +30,34 @@
         <button id="file-again-button" class="text-button" type="button" hidden>
           File again
         </button>
-        <a
-          id="open-notion-link"
-          class="primary-button"
-          target="_blank"
-          rel="noopener noreferrer"
-          hidden
-        >
-          Open in Notion
-          <svg aria-hidden="true"><use href="./icons.svg#external" /></svg>
-        </a>
-        <button
-          id="add-to-notion-button"
-          class="primary-button"
-          type="submit"
-          form="job-form"
-          aria-keyshortcuts="Meta+Enter Control+Enter"
-        >
-          Add to Notion
-          <span class="button-trail" aria-hidden="true">
-            <span id="shortcut-hint" class="shortcut" data-platform="mac">
-              <svg class="shortcut-mod" aria-hidden="true"><use href="./icons.svg#command" /></svg>
-              <span class="shortcut-ctrl">Ctrl</span>
-              <svg aria-hidden="true"><use href="./icons.svg#enter" /></svg>
+        <div id="action" class="action">
+          <a
+            id="open-notion-link"
+            class="primary-button"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open in Notion
+            <svg aria-hidden="true"><use href="./icons.svg#external" /></svg>
+          </a>
+          <button
+            id="add-to-notion-button"
+            class="primary-button"
+            type="submit"
+            form="job-form"
+            aria-keyshortcuts="Meta+Enter Control+Enter"
+          >
+            Add to Notion
+            <span class="button-trail" aria-hidden="true">
+              <span id="shortcut-hint" class="shortcut" data-platform="mac">
+                <svg class="shortcut-mod" aria-hidden="true"><use href="./icons.svg#command" /></svg>
+                <span class="shortcut-ctrl">Ctrl</span>
+                <svg aria-hidden="true"><use href="./icons.svg#enter" /></svg>
+              </span>
+              <svg class="spinner" aria-hidden="true"><use href="./icons.svg#spinner" /></svg>
             </span>
-            <svg class="spinner" aria-hidden="true"><use href="./icons.svg#spinner" /></svg>
-          </span>
-        </button>
+          </button>
+        </div>
       </header>
 
       <p id="page-notice" class="page-notice" hidden></p>

@@ -541,14 +541,6 @@ svg {
   color: transparent;
 }
 
-.popup[data-filing="filed"] .row {
-  cursor: auto;
-}
-
-.popup[data-filing="filed"] .row:hover {
-  background: transparent;
-}
-
 .primary-button,
 .text-button,
 .icon-button {
@@ -601,15 +593,46 @@ svg {
   }
 }
 
-/* Shortcut and spinner share one cell, so the button keeps its width. */
-.button-trail {
+/* Add and Open share one slot sized to the wider of the two, so trading
+   one for the other never moves the header. */
+.action {
   display: grid;
-  justify-items: end;
-  align-items: center;
+  flex-shrink: 0;
 }
 
+.action > *,
 .button-trail > * {
   grid-area: 1 / 1;
+}
+
+.action > *,
+.shortcut,
+.spinner {
+  transition:
+    opacity 150ms var(--ease-out),
+    visibility 0s 150ms;
+}
+
+.popup[data-filing="filed"] #add-to-notion-button,
+.popup:not([data-filing="filed"]) #open-notion-link,
+.popup[data-filing="adding"] .shortcut,
+.popup:not([data-filing="adding"]) .spinner {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.popup[data-filing="filed"] #open-notion-link,
+.popup:not([data-filing="filed"]) #add-to-notion-button,
+.popup[data-filing="adding"] .spinner {
+  transition-delay: 0s;
+}
+
+/* The spinner takes the shortcut's place, centered in the space the
+   shortcut leaves, so the label never moves. */
+.button-trail {
+  display: grid;
+  place-items: center;
 }
 
 .shortcut {
@@ -637,16 +660,7 @@ svg {
 .spinner {
   width: 12px;
   height: 12px;
-  visibility: hidden;
   animation: spin 800ms linear infinite;
-}
-
-.popup[data-filing="adding"] .spinner {
-  visibility: visible;
-}
-
-.popup[data-filing="adding"] .shortcut {
-  visibility: hidden;
 }
 
 .popup[data-filing="adding"] .primary-button {
@@ -685,7 +699,7 @@ svg {
   }
 }
 
-.primary-button[hidden],
+.action[hidden],
 .text-button[hidden],
 .icon-button[hidden] {
   display: none;
