@@ -8,12 +8,12 @@
   <symbol id="enter" viewBox="0 0 16 16">
     <path d="M12.5 3.5v4a2.5 2.5 0 0 1-2.5 2.5H3.5M6.5 7l-3 3 3 3" />
   </symbol>
+  <symbol id="shift" viewBox="0 0 16 16">
+    <path d="M2.5 8.5 8 3l5.5 5.5h-3v4h-5v-4z" />
+  </symbol>
   <symbol id="spinner" viewBox="0 0 16 16">
     <circle cx="8" cy="8" r="5.25" stroke-opacity="0.25" />
     <path d="M8 2.75A5.25 5.25 0 0 1 13.25 8" />
-  </symbol>
-  <symbol id="refresh" viewBox="0 0 16 16">
-    <path d="M13.25 8a5.25 5.25 0 1 1-1.54-3.71M13.25 2.75v2.5h-2.5" />
   </symbol>
   <symbol id="external" viewBox="0 0 16 16">
     <path d="M4.75 11.25 11.25 4.75M6 4.75h5.25V10" />

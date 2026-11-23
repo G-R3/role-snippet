@@ -18,15 +18,6 @@
           <svg class="status-check" aria-hidden="true"><use href="./icons.svg#check" /></svg>
           <span id="status-message"></span>
         </p>
-        <button
-          id="reextract-button"
-          class="icon-button"
-          type="button"
-          aria-label="Read the page again"
-          title="Read the page again"
-        >
-          <svg aria-hidden="true"><use href="./icons.svg#refresh" /></svg>
-        </button>
         <button id="file-again-button" class="text-button" type="button" hidden>
           File again
         </button>
@@ -49,7 +40,7 @@
           >
             Add to Notion
             <span class="button-trail" aria-hidden="true">
-              <span id="shortcut-hint" class="shortcut" data-platform="mac">
+              <span class="shortcut">
                 <svg class="shortcut-mod" aria-hidden="true"><use href="./icons.svg#command" /></svg>
                 <span class="shortcut-ctrl">Ctrl</span>
                 <svg aria-hidden="true"><use href="./icons.svg#enter" /></svg>
@@ -138,6 +129,27 @@
       <footer id="source" class="footer" hidden>
         <span id="source-name" class="source-name"></span>
         <span id="source-detail" class="source-detail"></span>
+        <button
+          id="parse-button"
+          class="text-button parse-button"
+          type="button"
+          aria-keyshortcuts="Meta+Shift+Enter Control+Shift+Enter"
+          hidden
+          disabled
+        >
+          <span class="parse-indicator" aria-hidden="true">
+            <svg class="spinner parse-spinner" aria-hidden="true"><use href="./icons.svg#spinner" /></svg>
+            <svg class="parse-check" aria-hidden="true"><use href="./icons.svg#check" /></svg>
+          </span>
+          Parse
+          <span class="shortcut" aria-hidden="true">
+            <svg class="shortcut-mod" aria-hidden="true"><use href="./icons.svg#command" /></svg>
+            <span class="shortcut-ctrl">Ctrl</span>
+            <svg aria-hidden="true"><use href="./icons.svg#shift" /></svg>
+            <svg aria-hidden="true"><use href="./icons.svg#enter" /></svg>
+          </span>
+        </button>
+        <span id="parse-status" class="visually-hidden" role="status"></span>
       </footer>
     </main>
 

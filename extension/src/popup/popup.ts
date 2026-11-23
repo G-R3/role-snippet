@@ -45,10 +45,10 @@ const statusMessage = getElement<HTMLElement>("status-message");
 const sourceFooter = getElement<HTMLElement>("source");
 const sourceName = getElement<HTMLElement>("source-name");
 const sourceDetail = getElement<HTMLElement>("source-detail");
-const reextractButton = getElement<HTMLButtonElement>("reextract-button");
+const parseButton = getElement<HTMLButtonElement>("parse-button");
+const parseStatus = getElement<HTMLElement>("parse-status");
 const pageNotice = getElement<HTMLParagraphElement>("page-notice");
 const addToNotionButton = getElement<HTMLButtonElement>("add-to-notion-button");
-const shortcutHint = getElement<HTMLElement>("shortcut-hint");
 const fileAgainButton = getElement<HTMLButtonElement>("file-again-button");
 const action = getElement<HTMLElement>("action");
 const openNotionLink = getElement<HTMLAnchorElement>("open-notion-link");
@@ -91,6 +91,7 @@ let hasAttemptedFiling = false;
 let activeUrl: URL | null = null;
 let filedJob: FiledJob | null = null;
 let filingError = "";
+let parseReset: number | undefined;
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -127,9 +128,9 @@ function setNotice(message: string, tone: NoticeTone = "neutral"): void {
 
 function renderPage(): void {
   popup.dataset.page = pageState;
-  reextractButton.hidden =
-    pageState === "unsupported" || filingState === "filed";
-  reextractButton.disabled = isInitializing || pageState === "reading";
+  parseButton.hidden = !activeUrl || !isSupportedJobPageUrl(activeUrl);
+  parseButton.disabled =
+    isInitializing || pageState === "reading" || filingState === "adding";
   formElement.setAttribute("aria-busy", String(pageState === "reading"));
 }
 
@@ -215,6 +216,7 @@ function renderActions(missingFields: JobPostField[]): void {
   statusLine.setAttribute("role", filingState === "error" ? "alert" : "status");
   addToNotionButton.setAttribute("aria-busy", String(filingState === "adding"));
   fileAgainButton.hidden = !isFiled;
+  fileAgainButton.disabled = isInitializing || pageState === "reading";
   // A filing Notion didn't link back to has nothing to open.
   action.hidden = isFiled && !filedJob?.notionUrl;
 
@@ -262,11 +264,6 @@ async function restoreSavedJobPost(): Promise<JobPost | null> {
   return savedJobPost;
 }
 
-async function findFiledJob(sourceUrl: string): Promise<FiledJob | null> {
-  const key = getFiledJobKey(sourceUrl);
-  return key ? ((await readFiledJobs())[key] ?? null) : null;
-}
-
 async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab ?? null;
@@ -281,21 +278,41 @@ function setCurrentUrl(url: string, preserveDetails: boolean): void {
     sourceUrl: details.sourceUrl || url,
   });
 
-  activeUrl = parseUrl(url);
+  // Look up filed status alongside the initial extraction.
+  void setSourceUrl(url);
   const isJobPage = activeUrl !== null && isSupportedJobPageUrl(activeUrl);
   pageState = isJobPage ? "read" : "unsupported";
   setNotice(isJobPage ? "" : SUPPORTED_BOARDS);
-  renderSource();
   render();
+}
 
-  // Looked up alongside reading the page, not after it.
-  void findFiledJob(url)
+function setSourceUrl(url: string): Promise<void> | undefined {
+  const previousKey = getFiledJobKey(activeUrl?.href);
+  const key = getFiledJobKey(url);
+  activeUrl = parseUrl(url);
+  renderSource();
+
+  if (!key || key === previousKey) {
+    return;
+  }
+
+  filedJob = null;
+  filingState = "ready";
+  hasAttemptedFiling = false;
+  popup.classList.remove("just-filed");
+
+  return readFiledJobs()
     .catch(() => null)
-    .then((record) => {
-      if (record) {
+    .then((records) => {
+      const record = records?.[key];
+      if (
+        record &&
+        getFiledJobKey(activeUrl?.href) === key &&
+        filingState !== "adding" &&
+        filingState !== "filed"
+      ) {
         filedJob = record;
-        filingState = "filed";
-        render();
+        setFilingState("filed");
       }
     });
 }
@@ -363,19 +380,32 @@ function sendSyncMessage(jobPost: JobPost): Promise<SyncJobPostResponse> {
   });
 }
 
-async function extractFromTab(tabId: number): Promise<void> {
-  setNotice("");
-  setPageState("reading");
+async function extractFromTab(tabId: number, manual = false): Promise<void> {
+  if (pageState !== "reading") {
+    setNotice("");
+    setPageState("reading");
+  }
   const response = await sendExtractMessage(tabId);
 
   if (!response.ok) {
-    setNotice(response.error);
+    setNotice(response.error, "error");
     setPageState("failed");
     return;
   }
 
+  if (manual) {
+    // The content script reports the URL it actually parsed, including SPA navigation.
+    await setSourceUrl(response.jobPost.sourceUrl);
+  }
   writeToInputs(fieldElements, response.jobPost);
   setPageState("read");
+  if (manual) {
+    parseButton.classList.add("is-parsed");
+    parseStatus.textContent = "Page parsed.";
+    parseReset = window.setTimeout(() => {
+      parseButton.classList.remove("is-parsed");
+    }, 900);
+  }
 
   try {
     await saveJobPost(response.jobPost);
@@ -443,9 +473,15 @@ async function fileCurrentJob(): Promise<void> {
 }
 
 async function reextractCurrentTab(): Promise<void> {
-  if (isInitializing || pageState === "reading") {
+  if (parseButton.hidden || parseButton.disabled) {
     return;
   }
+
+  window.clearTimeout(parseReset);
+  parseButton.classList.remove("is-parsed");
+  parseStatus.textContent = "";
+  setNotice("");
+  setPageState("reading");
 
   try {
     const tab = await getActiveTab();
@@ -456,7 +492,7 @@ async function reextractCurrentTab(): Promise<void> {
       return;
     }
 
-    await extractFromTab(tab.id);
+    await extractFromTab(tab.id, true);
   } catch {
     setNotice("Couldn’t read the page. Try again.", "error");
     setPageState("failed");
@@ -470,7 +506,7 @@ function fileAgain(): void {
   void fileCurrentJob();
 }
 
-shortcutHint.dataset.platform = /Mac|iPhone|iPad/.test(navigator.userAgent)
+popup.dataset.platform = /Mac|iPhone|iPad/.test(navigator.userAgent)
   ? "mac"
   : "other";
 writeToInputs(fieldElements, emptyJobPost);
@@ -493,6 +529,13 @@ document.addEventListener("keydown", (event) => {
 
   if (event.metaKey || event.ctrlKey) {
     event.preventDefault();
+    if (event.shiftKey) {
+      if (!event.altKey && !event.repeat) {
+        void reextractCurrentTab();
+      }
+      return;
+    }
+
     void fileCurrentJob();
     return;
   }
@@ -540,7 +583,7 @@ for (const field of JOB_POST_FIELDS) {
   });
 }
 
-reextractButton.addEventListener("click", () => {
+parseButton.addEventListener("click", () => {
   void reextractCurrentTab();
 });
 
