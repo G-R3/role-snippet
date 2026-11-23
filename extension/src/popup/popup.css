@@ -17,7 +17,7 @@
   --color-text-primary: oklch(22% 0.005 90);
   --color-text-secondary: oklch(50% 0.006 90);
   --color-text-tertiary: oklch(66% 0.005 90);
-  /* One accent, one meaning: filed in Notion. */
+  /* Successful actions. */
   --color-accent: oklch(50% 0.1 145);
   --color-warning-text: oklch(52% 0.11 70);
   --color-error-text: oklch(52% 0.16 27);
@@ -44,7 +44,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: oklch(18% 0.004 90);
+    --color-bg: #000;
     --color-bg-hover: oklch(21.5% 0.004 90);
     --color-bg-sunken: oklch(24.5% 0.004 90);
     --color-border-default: oklch(32% 0.004 90);
@@ -157,14 +157,14 @@ svg {
   }
 }
 
-/* Footer: where the job came from. */
+/* Footer: the source and manual parse action. */
 
 .footer {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
-  height: 36px;
+  height: 44px;
   padding: 0 16px;
   border-top: 1px dashed var(--color-border-default);
   color: var(--color-text-secondary);
@@ -235,8 +235,8 @@ svg {
   font-weight: 500;
 }
 
-.status-check {
-  display: none;
+.status-check,
+.parse-check {
   flex-shrink: 0;
   width: 14px;
   height: 14px;
@@ -244,11 +244,16 @@ svg {
   stroke-dasharray: 1;
 }
 
+.status-check {
+  display: none;
+}
+
 .status[data-tone="filed"] .status-check {
   display: block;
 }
 
-.popup.just-filed .status-check {
+.popup.just-filed .status-check,
+.parse-button.is-parsed .parse-check {
   animation: draw-check 300ms var(--ease-out) both;
 }
 
@@ -542,8 +547,7 @@ svg {
 }
 
 .primary-button,
-.text-button,
-.icon-button {
+.text-button {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -564,16 +568,25 @@ svg {
 }
 
 .primary-button:active,
-.text-button:active,
-.icon-button:active {
+.text-button:enabled:active {
   transform: scale(0.96);
+}
+
+.text-button {
+  padding: 0 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
 }
 
 /* Optical padding: the trailing glyphs carry their own side bearing inside
    the 16px grid, so the end side gets less padding than the text side. */
-.primary-button {
+.primary-button,
+.parse-button {
   gap: 6px;
   padding: 0 8px 0 10px;
+}
+
+.primary-button {
   background: var(--color-text-primary);
   color: var(--color-bg);
 }
@@ -606,8 +619,7 @@ svg {
 }
 
 .action > *,
-.shortcut,
-.spinner {
+.button-trail > * {
   transition:
     opacity 150ms var(--ease-out),
     visibility 0s 150ms;
@@ -615,8 +627,8 @@ svg {
 
 .popup[data-filing="filed"] #add-to-notion-button,
 .popup:not([data-filing="filed"]) #open-notion-link,
-.popup[data-filing="adding"] .shortcut,
-.popup:not([data-filing="adding"]) .spinner {
+:where(.popup[data-filing="adding"] .button-trail) .shortcut,
+:where(.popup:not([data-filing="adding"]) .button-trail) .spinner {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -624,7 +636,7 @@ svg {
 
 .popup[data-filing="filed"] #open-notion-link,
 .popup:not([data-filing="filed"]) #add-to-notion-button,
-.popup[data-filing="adding"] .spinner {
+:where(.popup[data-filing="adding"] .button-trail) .spinner {
   transition-delay: 0s;
 }
 
@@ -652,8 +664,8 @@ svg {
   margin-right: 1px;
 }
 
-.shortcut[data-platform="mac"] .shortcut-ctrl,
-.shortcut[data-platform="other"] .shortcut-mod {
+.popup[data-platform="mac"] .shortcut-ctrl,
+.popup[data-platform="other"] .shortcut-mod {
   display: none;
 }
 
@@ -673,35 +685,59 @@ svg {
   }
 }
 
-.text-button {
-  padding: 0 8px;
-  background: transparent;
+.parse-button {
+  margin-inline-start: auto;
+}
+
+.parse-button .shortcut {
+  color: inherit;
+}
+
+.parse-indicator {
   color: var(--color-text-secondary);
 }
 
-.icon-button {
-  width: 28px;
-  padding: 0;
-  background: transparent;
-  color: var(--color-text-secondary);
+.parse-button:disabled {
+  color: var(--color-text-tertiary);
+  cursor: default;
 }
 
-.icon-button svg {
-  width: 16px;
-  height: 16px;
+.parse-button:enabled:focus-visible {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.parse-indicator,
+.parse-spinner,
+.parse-check {
+  display: none;
+}
+
+.popup[data-page="reading"] .parse-indicator,
+.parse-button.is-parsed .parse-indicator {
+  display: grid;
+  width: 14px;
+  place-items: center;
+}
+
+.popup[data-page="reading"] .parse-spinner,
+.parse-button.is-parsed .parse-check {
+  display: block;
+}
+
+.parse-check {
+  color: var(--color-accent);
 }
 
 @media (hover: hover) {
-  .text-button:hover,
-  .icon-button:hover {
+  .text-button:enabled:hover {
     background: var(--color-bg-hover);
     color: var(--color-text-primary);
   }
 }
 
 .action[hidden],
-.text-button[hidden],
-.icon-button[hidden] {
+.text-button[hidden] {
   display: none;
 }
 
@@ -715,7 +751,8 @@ svg {
     animation-duration: 2400ms;
   }
 
-  .popup.just-filed .status-check {
+  .popup.just-filed .status-check,
+  .parse-button.is-parsed .parse-check {
     animation: none;
   }
 
@@ -724,8 +761,7 @@ svg {
   }
 
   .primary-button:active,
-  .text-button:active,
-  .icon-button:active {
+  .text-button:enabled:active {
     transform: none;
   }
 }
